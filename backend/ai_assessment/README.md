@@ -98,16 +98,16 @@ inside FastAPI's event loop must `await` the service, not use `asyncio.run`.
 Christan owns mapping the payload to his response schema and the exceptions
 listed below to his HTTP error policy. No new route is needed in this module.
 
-No FastAPI API/schema files exist in this checkout, so compatibility with
-Christan's implementation cannot yet be verified. Specific boundary mappings to
-confirm are: Pydantic objects to plain JSON dictionaries (for Pydantic v2,
-`model_dump(mode="json")`), exact chunk field names without extra fields,
-one-based/null pages, and the `requirements`/`uncertainty` response shape. The
-profile accepts JSON values only; dates, UUIDs, and enums must be serialized.
+The integrated FastAPI boundary now exists under `backend/app/`; see the
+[backend integration guide](../README.md) for its multipart profile and response
+mapping. It converts Pydantic objects with `model_dump(mode="json")`, validates
+the exact chunk fields and one-based/null pages, and preserves uncertainty and
+every canonical citation. The AI profile still accepts JSON values only; dates,
+UUIDs, and enums must be serialized before reaching this service.
 The root-qualified import requires the repository root on Python's import path;
 starting from `backend/` alone does not provide that. Exceptions are Python
-exceptions rather than FastAPI `HTTPException` instances. These are integration
-constraints, not confirmed mismatches with unseen API files.
+exceptions rather than FastAPI `HTTPException` instances. Other callers must
+provide the same normalization and error translation at their own boundary.
 
 ## Local contract and assumptions requiring Christan's agreement
 
@@ -115,7 +115,8 @@ constraints, not confirmed mismatches with unseen API files.
   The string is provider-neutral prompting, not an ALMA HTTP payload. The future
   adapter converts the documented model response into raw JSON text.
 - The profile is a JSON object with string keys and finite JSON values; its field
-  names are currently unconstrained because no shared supplier schema exists.
+  names are unconstrained at the AI boundary. The backend currently maps its five
+  public supplier-profile fields into this object.
   Profile claims are self-reported, not documentary verification. Christan must
   agree how his profile schema maps into this object.
 - Evidence is a sequence of objects containing exactly `chunk_id`, `document`,
