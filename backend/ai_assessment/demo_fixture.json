@@ -1,0 +1,57 @@
+{
+  "description": "Fictional Bayhaven procurement and supplier data for a deterministic mock demonstration only.",
+  "supplier_profile": {
+    "name": "Harborleaf Paper Supply (fictional)",
+    "self_reported": {
+      "paper_stock": "We have 100 boxes of A4 recycled paper available.",
+      "signed_product_specification_sheet": "We do not have a signed product specification sheet.",
+      "delivery_lead_time_days": null
+    }
+  },
+  "evidence_chunks": [
+    {
+      "chunk_id": "demo-tender-stock",
+      "document": "Fictional Bayhaven Paper Procurement.txt",
+      "page": 1,
+      "text": "Fictional Bayhaven Paper Procurement, section 1: The supplier must supply 100 boxes of A4 recycled paper."
+    },
+    {
+      "chunk_id": "demo-tender-specification",
+      "document": "Fictional Bayhaven Paper Procurement.txt",
+      "page": 2,
+      "text": "Fictional Bayhaven Paper Procurement, section 2: The supplier must submit a signed product specification sheet for the offered paper."
+    },
+    {
+      "chunk_id": "demo-tender-delivery",
+      "document": "Fictional Bayhaven Paper Procurement.txt",
+      "page": 3,
+      "text": "Fictional Bayhaven Paper Procurement, section 3: The supplier must deliver the paper within 14 calendar days of receiving a purchase order."
+    }
+  ],
+  "mock_response": {
+    "requirements": [
+      {
+        "requirement_description": "Supply 100 boxes of A4 recycled paper.",
+        "status": "self_reported_match",
+        "reasoning": "The supplier reports having 100 boxes of A4 recycled paper available. No supplier documentary evidence was supplied to verify that claim.",
+        "recommended_next_action": "Upload stock records confirming availability of 100 boxes of A4 recycled paper.",
+        "evidence_chunk_ids": ["demo-tender-stock"]
+      },
+      {
+        "requirement_description": "Submit a signed product specification sheet for the offered paper.",
+        "status": "missing",
+        "reasoning": "The supplier explicitly reports not having a signed product specification sheet. This reported absence is not inferred from missing retrieval results.",
+        "recommended_next_action": "Prepare and sign a product specification sheet for the offered paper.",
+        "evidence_chunk_ids": ["demo-tender-specification"]
+      },
+      {
+        "requirement_description": "Deliver within 14 calendar days of receiving a purchase order.",
+        "status": "unknown",
+        "reasoning": "The supplier's delivery lead time is unspecified, and no supplied supplier document establishes whether the delivery requirement can be met.",
+        "recommended_next_action": "Confirm the delivery lead time and provide a plan showing whether delivery within 14 calendar days of a purchase order is feasible.",
+        "evidence_chunk_ids": ["demo-tender-delivery"]
+      }
+    ],
+    "uncertainty": "This is a fixed mock demonstration using fictional data, not actual model inference or an official eligibility decision. Supplier statements are unverified, delivery capability is unknown, and the three excerpts do not establish completeness of a real tender."
+  }
+}

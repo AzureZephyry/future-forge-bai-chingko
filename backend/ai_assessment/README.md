@@ -34,11 +34,80 @@ The default mock returns no findings with an explicit mock uncertainty message.
 It does not parse tender text or simulate actual assessment reasoning. Pass a
 reviewed raw JSON response to `MockProvider(response=...)` for deterministic UI
 or orchestration fixtures. Fixtures use the same validation path as real output.
-The tests contain a complete response example.
+The runnable demonstration below contains a complete response example.
 
 Supply `AlmaProvider()` to represent real inference: it always raises
 `InferenceUnavailableError` until implemented from official specifications.
 There is no provider default, implicit environment selection, or mock fallback.
+
+## Deterministic demonstration
+
+From the repository root:
+
+```powershell
+python -B -m backend.ai_assessment.demo
+```
+
+`demo_fixture.json` contains a fictional three-page procurement document as three
+already-extracted text chunks, a fictional supplier profile, and a fixed mock
+response. No physical PDF, extraction, or retrieval is involved. `demo.py` passes
+these inputs through the existing `MockProvider` and `AssessmentService`.
+
+| Tender requirement | Status | Preparation action |
+| --- | --- | --- |
+| Supply 100 boxes of A4 recycled paper | `self_reported_match` | Upload stock records to verify the supplier's claim |
+| Submit a signed product specification sheet | `missing` | Prepare and sign the explicitly absent sheet |
+| Deliver within 14 calendar days of a purchase order | `unknown` | Confirm lead time and supply a delivery plan |
+
+Each assessment cites the corresponding tender chunk. The missing status is
+based on the supplier explicitly reporting absence; the unknown status reflects
+an unspecified lead time. No supplier claim is treated as documentary proof.
+The provider returns a fixed fixture regardless of the prompt, so this demo is
+only appropriate for these fictional inputs, not arbitrary tender assessments.
+
+## Exact FastAPI integration call
+
+For the fictional demo, Christan can initialize the existing service like this:
+
+```python
+import json
+
+from backend.ai_assessment import AssessmentService, MockProvider
+from backend.ai_assessment.demo import load_demo_fixture
+
+fixture = load_demo_fixture()
+assessment_service = AssessmentService(
+    provider=MockProvider(response=json.dumps(fixture["mock_response"]))
+)
+```
+
+Inside his existing async orchestration function, the exact service call is:
+
+```python
+assessment = await assessment_service.assess(
+    supplier_profile=fixture["supplier_profile"],
+    evidence_chunks=fixture["evidence_chunks"],
+)
+payload = assessment.to_dict()
+```
+
+For actual application inputs, pass the normalized supplier dictionary and chunk
+dictionaries to those same two keyword arguments. Select a real provider only
+once it is implemented; the fixture-backed mock must remain demo-only. Callers
+inside FastAPI's event loop must `await` the service, not use `asyncio.run`.
+Christan owns mapping the payload to his response schema and the exceptions
+listed below to his HTTP error policy. No new route is needed in this module.
+
+No FastAPI API/schema files exist in this checkout, so compatibility with
+Christan's implementation cannot yet be verified. Specific boundary mappings to
+confirm are: Pydantic objects to plain JSON dictionaries (for Pydantic v2,
+`model_dump(mode="json")`), exact chunk field names without extra fields,
+one-based/null pages, and the `requirements`/`uncertainty` response shape. The
+profile accepts JSON values only; dates, UUIDs, and enums must be serialized.
+The root-qualified import requires the repository root on Python's import path;
+starting from `backend/` alone does not provide that. Exceptions are Python
+exceptions rather than FastAPI `HTTPException` instances. These are integration
+constraints, not confirmed mismatches with unseen API files.
 
 ## Local contract and assumptions requiring Christan's agreement
 
