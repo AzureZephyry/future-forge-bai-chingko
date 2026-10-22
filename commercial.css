@@ -436,3 +436,483 @@ dialog::backdrop { background: rgb(12 19 14 / 60%); backdrop-filter: blur(3px); 
   .commercial .app-sidebar nav a { font-size: 14px; padding: 8px 9px; }
   .commercial .workflow-path ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+/* Marketing refinements */
+.marketing-shell .marketing-header {
+  height: 82px;
+}
+.marketing-shell .marketing-hero {
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  align-items: start;
+  gap: clamp(34px, 5vw, 72px);
+  padding-top: clamp(30px, 3.5vw, 52px);
+  padding-bottom: clamp(48px, 5vw, 70px);
+}
+.marketing-shell .marketing-hero h1 {
+  max-width: 650px;
+  font-size: clamp(58px, 5.8vw, 82px);
+  line-height: .99;
+  letter-spacing: -.075em;
+}
+.marketing-shell .hero-copy .eyebrow {
+  margin-bottom: 22px;
+}
+.marketing-shell .hero-description {
+  max-width: 510px;
+  margin: 23px 0 26px;
+  font-size: clamp(16px, 1.3vw, 18px);
+  line-height: 1.7;
+}
+.marketing-shell .hero-copy .button-row {
+  gap: 18px 24px;
+}
+.marketing-shell .hero-copy .primary-button {
+  min-height: 58px;
+  padding-inline: 24px;
+  box-shadow: 0 8px 20px rgb(119 58 39 / 16%);
+}
+.marketing-shell .primary-button svg,
+.marketing-shell .text-link svg,
+.marketing-shell .preview-action-button svg {
+  transition: transform var(--duration);
+}
+.marketing-shell .primary-button:hover svg,
+.marketing-shell .text-link:hover svg,
+.marketing-shell .preview-action-button:hover svg {
+  transform: translateX(4px);
+}
+.marketing-shell .primary-button:active,
+.marketing-shell .secondary-button:active {
+  transform: translateY(1px);
+}
+.marketing-shell .hero-copy .text-link {
+  text-underline-offset: 5px;
+}
+.marketing-shell .quiet-line {
+  margin-top: 19px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.marketing-shell .hero-visual {
+  padding: 9px 0;
+  perspective: 1200px;
+}
+.marketing-shell .hero-visual::before {
+  inset: -55px -48px -30px;
+  background: radial-gradient(ellipse at 54% 46%, var(--sand), transparent 69%);
+}
+.marketing-shell .product-preview {
+  position: relative;
+  border-radius: 16px;
+  border-color: var(--border);
+  box-shadow: 0 32px 76px rgb(61 42 30 / 13%), 0 6px 18px rgb(61 42 30 / 7%);
+  transition: transform 300ms ease, box-shadow 300ms ease;
+}
+.marketing-shell .product-preview::after {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgb(255 255 255 / 45%);
+  border-radius: inherit;
+  content: "";
+  pointer-events: none;
+}
+.marketing-shell .hero-visual:hover .product-preview {
+  transform: translateY(-3px);
+  box-shadow: 0 38px 84px rgb(61 42 30 / 16%), 0 8px 22px rgb(61 42 30 / 8%);
+}
+.marketing-shell .preview-top {
+  min-height: 48px;
+  padding: 11px 18px;
+  font-size: 13px;
+}
+.marketing-shell .preview-dots {
+  font-size: 10px;
+}
+.marketing-shell .preview-top .badge {
+  padding: 5px 9px;
+  font-size: 12px;
+}
+.marketing-shell .preview-body {
+  padding: clamp(18px, 2vw, 26px);
+}
+.marketing-shell .preview-title {
+  gap: 15px;
+}
+.marketing-shell .preview-icon {
+  padding: 14px;
+}
+.marketing-shell .preview-title .eyebrow {
+  margin-bottom: 5px;
+  font-size: 13px;
+  letter-spacing: .06em;
+}
+.marketing-shell .preview-title h3 {
+  font-size: clamp(18px, 1.8vw, 23px);
+  line-height: 1.25;
+}
+.marketing-shell .preview-stat-row {
+  gap: 8px;
+  padding: 24px 0;
+}
+.marketing-shell .preview-stat-row div {
+  gap: 6px;
+  padding-left: 15px;
+}
+.marketing-shell .preview-stat-row strong {
+  color: var(--text);
+  font-size: clamp(27px, 2.5vw, 34px);
+  line-height: 1.1;
+  letter-spacing: -.045em;
+}
+.marketing-shell .preview-stat-row span {
+  font-size: 14px;
+  line-height: 1.35;
+}
+.marketing-shell .preview-advisory {
+  min-height: 76px;
+  gap: 13px;
+  align-items: flex-start;
+  padding: 16px 18px;
+  border: 1px solid currentColor;
+  border-color: color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 10px;
+}
+.marketing-shell .preview-advisory .status-dot {
+  width: 9px;
+  height: 9px;
+  margin-top: 7px;
+}
+.marketing-shell .preview-advisory strong {
+  font-size: 16px;
+}
+.marketing-shell .preview-advisory p {
+  margin-top: 5px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.marketing-shell .preview-requirements {
+  padding: 17px 0;
+}
+.marketing-shell .preview-requirements > div {
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 14px;
+}
+.marketing-shell .preview-requirements .badge {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  font-size: 12px;
+}
+.marketing-shell .preview-action {
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.marketing-shell .preview-action > span {
+  font-size: 14px;
+  line-height: 1.45;
+}
+.marketing-shell .preview-action-button {
+  flex: 0 0 auto;
+  min-height: 44px;
+  font-size: 14px;
+}
+.marketing-shell .preview-caption {
+  margin: 14px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.marketing-shell .visual-note {
+  margin-bottom: 13px;
+  font-size: 12px;
+  letter-spacing: .11em;
+}
+.marketing-shell .visual-bottom {
+  margin-top: 15px;
+  font-size: 14px;
+}
+.marketing-shell .value-strip {
+  padding-top: 22px;
+  padding-bottom: 22px;
+}
+.marketing-shell .value-strip span {
+  font-size: 14px;
+}
+.marketing-shell .editorial-section {
+  gap: clamp(36px, 7vw, 100px);
+  padding-top: clamp(60px, 7vw, 92px);
+}
+.marketing-shell .editorial-section > p {
+  max-width: 600px;
+}
+.marketing-shell .feature-highlight {
+  padding-top: 22px;
+}
+.marketing-shell .feature-highlight h3 {
+  line-height: 1.2;
+}
+.marketing-shell .how-section {
+  background:
+    radial-gradient(ellipse at 12% 4%, rgb(255 255 255 / 42%), transparent 45%),
+    var(--sand);
+  padding-top: clamp(52px, 6vw, 78px);
+  padding-bottom: clamp(52px, 6vw, 78px);
+}
+.marketing-shell .how-steps li {
+  border-color: var(--border);
+}
+.marketing-shell .how-steps li > span {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+}
+.marketing-shell .pricing-teaser {
+  gap: clamp(40px, 8vw, 110px);
+}
+.marketing-shell .teaser-price {
+  border-color: var(--border);
+  box-shadow: var(--shadow);
+}
+.marketing-shell .teaser-price > span {
+  font-size: 14px;
+}
+.marketing-shell .teaser-price p {
+  font-size: 15px;
+}
+.marketing-shell .transparency {
+  max-width: 1320px;
+  padding-top: 22px;
+  padding-bottom: 48px;
+}
+.marketing-shell .transparency p {
+  font-size: 15px;
+  line-height: 1.7;
+}
+.marketing-shell .closing-cta {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgb(255 255 255 / 34%), transparent 62%),
+    var(--sage-bg);
+  padding-top: clamp(54px, 7vw, 86px);
+  padding-bottom: clamp(54px, 7vw, 86px);
+}
+.marketing-shell .closing-cta .primary-button {
+  margin-top: 10px;
+}
+.marketing-shell .marketing-footer {
+  gap: 35px;
+}
+.marketing-shell .marketing-footer .brand__name {
+  color: var(--text);
+}
+.marketing-shell .marketing-footer nav a,
+.marketing-shell .marketing-header nav a {
+  transition: color var(--duration);
+}
+.marketing-shell .marketing-footer nav a:hover,
+.marketing-shell .marketing-header nav a:hover {
+  color: var(--brand-dark);
+}
+:root[data-theme="dark"] .marketing-shell .product-preview {
+  box-shadow: 0 32px 76px rgb(0 0 0 / 34%), 0 6px 18px rgb(0 0 0 / 22%);
+}
+:root[data-theme="dark"] .marketing-shell .hero-visual::before {
+  background: radial-gradient(ellipse at 54% 46%, rgb(83 67 49 / 42%), transparent 69%);
+}
+:root[data-theme="dark"] .marketing-shell .how-section {
+  background:
+    radial-gradient(ellipse at 12% 4%, rgb(255 255 255 / 3%), transparent 45%),
+    var(--sand);
+}
+:root[data-theme="dark"] .marketing-shell .closing-cta {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgb(255 255 255 / 4%), transparent 62%),
+    var(--sage-bg);
+}
+@media (max-width: 1180px) {
+  .marketing-shell .marketing-hero {
+    gap: clamp(26px, 4vw, 48px);
+  }
+  .marketing-shell .marketing-hero h1 {
+    font-size: clamp(54px, 6vw, 70px);
+  }
+  .marketing-shell .hero-visual::before {
+    right: -24px;
+  }
+}
+@media (max-width: 900px) {
+  .marketing-shell .marketing-header {
+    height: auto;
+    min-height: 82px;
+  }
+  .marketing-shell .marketing-hero {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 760px;
+    padding-top: 30px;
+    padding-bottom: 48px;
+    gap: 32px;
+  }
+  .marketing-shell .marketing-hero h1 {
+    font-size: clamp(56px, 9vw, 74px);
+  }
+  .marketing-shell .hero-visual {
+    max-width: 700px;
+  }
+  .marketing-shell .editorial-section,
+  .marketing-shell .pricing-teaser {
+    gap: 32px;
+  }
+}
+@media (max-width: 650px) {
+  .marketing-shell .marketing-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand actions"
+      "nav nav";
+    align-items: center;
+    gap: 12px 10px;
+    height: auto;
+    padding-top: 16px;
+    padding-bottom: 0;
+  }
+  .marketing-shell .marketing-header > .brand {
+    grid-area: brand;
+    min-width: 0;
+  }
+  .marketing-shell .marketing-header nav {
+    grid-area: nav;
+    order: 0;
+    width: 100%;
+    justify-content: flex-start;
+    border-top: 1px solid var(--border);
+    padding: 11px 0 12px;
+  }
+  .marketing-shell .marketing-header .header-actions {
+    grid-area: actions;
+    margin: 0;
+  }
+  .marketing-shell .marketing-hero {
+    padding-top: 28px;
+    padding-bottom: 40px;
+    gap: 24px;
+  }
+  .marketing-shell .marketing-hero h1 {
+    font-size: clamp(50px, 13vw, 64px);
+    line-height: 1;
+  }
+  .marketing-shell .hero-copy .eyebrow {
+    margin-bottom: 17px;
+  }
+  .marketing-shell .hero-description {
+    margin: 18px 0 22px;
+    font-size: 17px;
+  }
+  .marketing-shell .hero-copy .button-row {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .marketing-shell .hero-copy .button-row > * {
+    justify-content: center;
+  }
+  .marketing-shell .hero-copy .text-link {
+    min-height: 48px;
+  }
+  .marketing-shell .quiet-line {
+    margin-top: 13px;
+  }
+  .marketing-shell .hero-visual::before {
+    inset: -28px -17px -20px;
+  }
+  .marketing-shell .preview-body {
+    padding: 17px;
+  }
+  .marketing-shell .preview-top {
+    flex-wrap: wrap;
+    min-height: 44px;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .marketing-shell .preview-top .badge {
+    padding: 4px 7px;
+    font-size: 11px;
+  }
+  .marketing-shell .preview-title h3 {
+    font-size: 18px;
+  }
+  .marketing-shell .preview-title .eyebrow {
+    font-size: 12px;
+  }
+  .marketing-shell .preview-stat-row {
+    gap: 5px;
+    padding: 18px 0;
+  }
+  .marketing-shell .preview-stat-row div {
+    padding-left: 9px;
+  }
+  .marketing-shell .preview-stat-row strong {
+    font-size: 27px;
+  }
+  .marketing-shell .preview-stat-row span {
+    font-size: 13px;
+  }
+  .marketing-shell .preview-advisory {
+    min-height: 0;
+    padding: 13px;
+  }
+  .marketing-shell .preview-requirements > div {
+    gap: 8px;
+    font-size: 13px;
+  }
+  .marketing-shell .preview-requirements .badge {
+    padding: 4px 7px;
+    font-size: 11px;
+  }
+  .marketing-shell .preview-action {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .marketing-shell .preview-action-button {
+    justify-content: center;
+    width: 100%;
+    font-size: 15px;
+  }
+  .marketing-shell .preview-caption {
+    font-size: 13px;
+  }
+  .marketing-shell .visual-note {
+    align-items: flex-start;
+    font-size: 10px;
+  }
+  .marketing-shell .visual-note span:last-child {
+    text-align: right;
+  }
+  .marketing-shell .visual-bottom {
+    align-items: flex-start;
+    font-size: 13px;
+  }
+  .marketing-shell .value-strip {
+    gap: 15px 10px;
+  }
+  .marketing-shell .value-strip span {
+    font-size: 13px;
+  }
+  .marketing-shell .how-steps p {
+    font-size: 15px;
+  }
+  .marketing-shell .transparency p {
+    font-size: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marketing-shell .product-preview,
+  .marketing-shell .primary-button svg,
+  .marketing-shell .text-link svg,
+  .marketing-shell .preview-action-button svg {
+    transition: none;
+  }
+}

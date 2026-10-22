@@ -251,6 +251,21 @@ test("first-time dashboard offers a clear path and a sample opportunity", async 
   await expect(page).toHaveURL(/\/app\/opportunity$/);
   await expect(page.getByText("FICTIONAL DEMONSTRATION — editable planning example")).toBeVisible();
 });
+test("marketing hero keeps its routes and the fictional preview uses readiness logic", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level:1 })).toContainText("Know before");
+  await expect(page.getByRole("link", { name:/Start Free/ }).first()).toHaveAttribute("href", "/app");
+  await expect(page.getByRole("link", { name:/Explore Gap-to-Go/ })).toHaveAttribute("href", "/features#simulator");
+  await expect(page.getByText("Critical Blocker", { exact:true })).toBeVisible();
+  await page.getByRole("button", { name:/Try the change/ }).click();
+  await expect(page.getByText("Action Required", { exact:true })).toBeVisible();
+  await expect(page.getByText("The timeline improves. The requirement is still missing.")).toBeVisible();
+  await page.emulateMedia({ reducedMotion:"reduce" });
+  await page.goto("/features");
+  await expect(page.getByRole("heading", { level:1 })).toBeVisible();
+  await page.getByRole("link", { name:"Open the simulator →" }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole("link", { name:"Open the simulator →" })).toBeVisible();
+});
 test("unknown routes provide recovery, and original legacy page remains accessible", async ({ page }) => {
   await page.goto("/not-a-page"); await expect(page.getByRole("heading",{level:1})).toContainText("Let's get you back");
   await page.getByRole("link",{name:"Open workspace",exact:true}).first().click(); await expect(page).toHaveURL(/\/app$/);
@@ -289,7 +304,8 @@ for(const [name,width,height] of [["desktop",1440,1000],["laptop",1024,900],["ta
     await page.evaluate(theme=>{localStorage.setItem("bidbridge.theme.v1",theme);},theme);
     for(const route of ["/","/pricing","/app/documents","/app/plan"]){
       await page.goto(route); await expect(page.locator("html")).toHaveAttribute("data-theme",theme);
-      expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+      const dimensions = await page.evaluate(() => ({ viewport:innerWidth, document:document.documentElement.scrollWidth }));
+      expect(dimensions.document, `${route} in ${theme}: ${JSON.stringify(dimensions)}`).toBeLessThanOrEqual(dimensions.viewport);
       if(route==="/"||route==="/app/documents")await page.screenshot({path:`test-results/commercial-${name}-${theme}-${route==="/"?"home":"documents"}.png`,fullPage:true});
     }
   }

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { BrowserRouter, Link, NavLink, Outlet, Route, Routes, useLocation, useNavigate } from "react-router";
+import { motion, useReducedMotion } from "motion/react";
 import { WorkspaceProvider, useWorkspace } from "./state/WorkspaceContext";
 import { CommerceProvider, useCommerce } from "./state/CommerceContext";
 import { ThemeProvider, ThemeToggle } from "./state/ThemeContext";
@@ -28,7 +29,8 @@ function CommerceNotice() {
   return c.error ? <p className="error" role="alert">{c.error} <button className="text-button" onClick={() => { void c.refresh(); }}>Retry local storage</button></p> : c.snapshot?.warning ? <p className="notice" role="alert">{c.snapshot.warning}</p> : null;
 }
 function MarketingLayout() {
-  return <div className="commercial marketing-shell"><a className="skip-link" href="#main-content">Skip to content</a><header className="marketing-header marketing-container"><Brand /><nav aria-label="Public navigation"><NavLink to="/features">Features</NavLink><NavLink to="/pricing">Pricing</NavLink><Link to="/app">Workspace</Link></nav><div className="header-actions"><ThemeToggle /><Link className="primary-button" to="/app">Start Free <Icon name="arrow" /></Link></div></header><main id="main-content"><CommerceNotice /><Outlet /></main><footer className="marketing-footer marketing-container"><div><Brand /><p>Know Before You Bid.<br />Preparation made clearer for smaller suppliers.</p></div><nav aria-label="Footer navigation"><Link to="/features">Features</Link><Link to="/pricing">Pricing</Link><Link to="/app">Open workspace</Link><a href="/legacy">Legacy assessment</a></nav><p className="footer-disclaimer">Team Bai-chingko · FUTURE FORGE<br />{DEMO_NOTICE}</p></footer></div>;
+  const reduceMotion = useReducedMotion();
+  return <div className="commercial marketing-shell"><a className="skip-link" href="#main-content">Skip to content</a><motion.header className="marketing-header marketing-container" initial={reduceMotion === false ? { opacity: 0, y: -8 } : false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: "easeOut" }}><Brand /><nav aria-label="Public navigation"><NavLink to="/features">Features</NavLink><NavLink to="/pricing">Pricing</NavLink><Link to="/app">Workspace</Link></nav><div className="header-actions"><ThemeToggle /><Link className="primary-button" to="/app">Start Free <Icon name="arrow" /></Link></div></motion.header><main id="main-content"><CommerceNotice /><Outlet /></main><footer className="marketing-footer marketing-container"><div><Brand /><p>Know Before You Bid.<br />Preparation made clearer for smaller suppliers.</p></div><nav aria-label="Footer navigation"><Link to="/features">Features</Link><Link to="/pricing">Pricing</Link><Link to="/app">Open workspace</Link><a href="/legacy">Legacy assessment</a></nav><p className="footer-disclaimer">Team Bai-chingko · FUTURE FORGE<br />{DEMO_NOTICE}</p></footer></div>;
 }
 const navigation = [["/app", "dashboard", "Overview"], ["/app/opportunity", "opportunity", "Opportunity"], ["/app/documents", "documents", "Documents"], ["/app/simulator", "simulator", "Gap-to-Go"], ["/app/report", "report", "Decision brief"], ["/app/plan", "plan", "Plan & Pricing"]] as const;
 function ApplicationLayout() {
