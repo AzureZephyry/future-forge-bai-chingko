@@ -42,5 +42,15 @@ binary PDF storage. Corrupt/future-version data is rejected without automatic
 replacement; unavailable storage is reported honestly. The core works with
 network access disabled after resources load, but is not an installable PWA.
 
+**Start what-if scenario** creates an in-memory copy. Compare the baseline and
+hypothetical outcome, then discard or explicitly confirm applying the changes.
+Refreshing drops the scenario and restores the baseline. **View decision brief**
+shows the active workspace with its context and disclaimer; **Print decision
+brief** opens the browser print dialog (including its Save as PDF option).
+
+Read [RELEASE.md](RELEASE.md) for rules, verification, deployment limits and safe
+team synchronization. [DEMO.md](DEMO.md) contains the exact judge demo and
+presentation-ready business narrative.
+
 Historical integration guides: [frontend](FRONTEND.md) and
 [backend](backend/README.md). These describe the preserved `/legacy` workflow.

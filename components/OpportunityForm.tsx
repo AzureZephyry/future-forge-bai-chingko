@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 export interface OpportunityFields {
   title: string;
   organization: string;
@@ -24,5 +26,3 @@ export function OpportunityForm({ value, onChange }: {
     </label>
   </div>;
 }
-import { useId } from "react";
-

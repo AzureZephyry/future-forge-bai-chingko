@@ -38,6 +38,16 @@ test("create an opportunity, with zero requirements explicitly needing setup", a
   await expect(page.getByRole("article")).toHaveCount(0);
 });
 
+test("demo replacement protects an unsubmitted opportunity draft", async ({ page }) => {
+  await page.getByLabel("Opportunity title", { exact: true }).fill("Unsaved opportunity");
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await page.getByRole("button", { name: "Load fictional demo" }).click();
+  await expect(page.getByLabel("Opportunity title", { exact: true })).toHaveValue("Unsaved opportunity");
+  page.once("dialog", (dialog) => dialog.accept());
+  await demo(page);
+  await expect(page.getByRole("region", { name: "Create opportunity" })).toHaveCount(0);
+});
+
 test("fictional demo has six requirements, five days, and a mandatory two-day overrun", async ({ page }) => {
   await demo(page);
   await expect(page.getByRole("article")).toHaveCount(6);
@@ -178,6 +188,159 @@ test("core interactions continue with network disabled after resources load", as
   await requirement(page, "Signed product specification sheet").getByLabel("Estimated preparation days").fill("3");
   await expect(advisory(page)).toContainText("Action Required");
   await context.setOffline(false);
+});
+
+async function stored(page: Page) { return page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY); }
+
+test("what-if edits compare risks without saving, and discard restores the baseline", async ({ page }) => {
+  await demo(page);
+  const baseline = await stored(page);
+  await page.getByRole("button", { name: "Start what-if scenario" }).click();
+  await requirement(page, "Signed product specification sheet").getByLabel("Estimated preparation days").fill("3");
+  const comparison = page.getByRole("region", { name: "What-if comparison" });
+  await expect(comparison).toContainText("Critical Blocker");
+  await expect(comparison).toContainText("Action Required");
+  await expect(comparison).toContainText("Deadline risks: 1 → 0");
+  await expect(comparison.getByText("Signed product specification sheet:", { exact: false })).toContainText("7-day estimate");
+  await expect(advisory(page)).toContainText("Action Required");
+  await expect(page.getByRole("button", { name: "Load fictional demo" })).toBeDisabled();
+  expect(await stored(page)).toBe(baseline);
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Discard scenario" }).click();
+  await expect(comparison).toHaveCount(0);
+  await expect(requirement(page, "Signed product specification sheet").getByLabel("Estimated preparation days")).toHaveValue("7");
+  expect(await stored(page)).toBe(baseline);
+});
+
+test("refreshing a scenario restores the saved baseline, never hypothetical changes", async ({ page }) => {
+  await demo(page);
+  const baseline = await stored(page);
+  await page.getByRole("button", { name: "Start what-if scenario" }).click();
+  await requirement(page, "Signed product specification sheet").getByLabel("Estimated preparation days").fill("3");
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.reload();
+  await expect(page.getByRole("region", { name: "What-if comparison" })).toHaveCount(0);
+  await expect(requirement(page, "Signed product specification sheet").getByLabel("Estimated preparation days")).toHaveValue("7");
+  expect(await stored(page)).toBe(baseline);
+});
+
+test("scenario opportunity edits, requirement addition and removal remain isolated", async ({ page }) => {
+  await demo(page);
+  const baseline = await stored(page);
+  await page.getByRole("button", { name: "Start what-if scenario" }).click();
+  await page.getByText("Edit opportunity details", { exact: true }).click();
+  await page.getByLabel("Opportunity title", { exact: true }).fill("Hypothetical opportunity");
+  await page.getByLabel("Submission deadline", { exact: true }).fill("2026-10-30");
+  await page.getByLabel("New requirement title").fill("Scenario-only item");
+  await page.getByRole("button", { name: "Add requirement", exact: true }).click();
+  page.once("dialog", (dialog) => dialog.accept());
+  await requirement(page, "Business permit").getByRole("button", { name: "Remove Business permit" }).click();
+  await expect(advisory(page)).toContainText("Action Required");
+  expect(await stored(page)).toBe(baseline);
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Discard scenario" }).click();
+  await expect(requirement(page, "Business permit")).toBeVisible();
+  await expect(requirement(page, "Scenario-only item")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Office Supplies Procurement — Demonstration", exact: true })).toBeVisible();
+});
+
+test("scenario application requires explicit confirmation and then survives reload", async ({ page }) => {
+  await demo(page);
+  const baseline = await stored(page);
+  await page.getByRole("button", { name: "Start what-if scenario" }).click();
+  await requirement(page, "Signed product specification sheet").getByLabel("Estimated preparation days").fill("3");
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await page.getByRole("button", { name: "Apply scenario to workspace" }).click();
+  expect(await stored(page)).toBe(baseline);
+  await expect(page.getByRole("region", { name: "What-if comparison" })).toBeVisible();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Apply scenario to workspace" }).click();
+  await expect(page.getByText("Saved locally in this browser", { exact: true })).toBeVisible();
+  expect(await stored(page)).not.toBe(baseline);
+  await page.reload();
+  await expect(advisory(page)).toContainText("Action Required");
+  await expect(requirement(page, "Signed product specification sheet").getByLabel("Estimated preparation days")).toHaveValue("3");
+});
+
+test("invalid scenarios cannot be applied and do not show a misleading comparison", async ({ page }) => {
+  await demo(page);
+  const baseline = await stored(page);
+  await page.getByRole("button", { name: "Start what-if scenario" }).click();
+  await requirement(page, "Signed product specification sheet").getByLabel("Estimated preparation days").fill("-1");
+  await expect(page.getByRole("button", { name: "Apply scenario to workspace" })).toBeDisabled();
+  await expect(page.getByRole("region", { name: "What-if comparison" })).toContainText("Correct invalid scenario fields");
+  await expect(page.getByRole("region", { name: "What-if comparison" })).not.toContainText("Deadline risks:");
+  await expect(page.getByRole("button", { name: "View decision brief" })).toBeDisabled();
+  expect(await stored(page)).toBe(baseline);
+});
+
+test("comparison explains newly introduced mandatory and optional risks", async ({ page }) => {
+  await demo(page);
+  await page.getByRole("button", { name: "Start what-if scenario" }).click();
+  await requirement(page, "Supplier registration").getByLabel("Preparation status").selectOption("conflict");
+  await requirement(page, "Additional supporting record").getByLabel("Estimated preparation days").fill("8");
+  const introduced = page.getByRole("region", { name: "What-if comparison" }).locator(".comparison-grid > div").filter({ has: page.getByRole("heading", { name: "Risks introduced under these assumptions" }) });
+  await expect(introduced).toContainText("Supplier registration");
+  await expect(introduced).toContainText("Additional supporting record");
+  await expect(page.getByRole("region", { name: "What-if comparison" })).toContainText("Deadline risks: 1 → 2");
+});
+
+test("complete rescue scenario stays hypothetical in its live decision brief", async ({ page }) => {
+  await demo(page);
+  const baseline = await stored(page);
+  await page.getByRole("button", { name: "Start what-if scenario" }).click();
+  await requirement(page, "Signed product specification sheet").getByLabel("Estimated preparation days").fill("3");
+  for (const title of ["Signed product specification sheet", "Supplier registration", "Delivery commitment"]) {
+    await requirement(page, title).getByLabel("Preparation status").selectOption("ready");
+  }
+  await expect(advisory(page)).toContainText("Ready for Review");
+  const comparison = page.getByRole("region", { name: "What-if comparison" });
+  await expect(comparison).toContainText("Critical Blocker");
+  await expect(comparison).toContainText("Ready for Review");
+  await expect(comparison).toContainText("Unresolved items: 4 → 1");
+  await page.getByRole("button", { name: "View decision brief" }).click();
+  const brief = page.getByRole("region", { name: "Bid decision brief" });
+  await expect(brief).toContainText("HYPOTHETICAL SCENARIO");
+  await expect(brief).toContainText("Ready for Review");
+  await expect(brief).toContainText("not official eligibility");
+  await expect(brief.locator(".brief-requirement")).toHaveCount(6);
+  expect(await stored(page)).toBe(baseline);
+  await page.screenshot({ path: "test-results/scenario-desktop.png", fullPage: true });
+});
+
+test("baseline decision brief reflects actual fields and prints only the readable brief", async ({ page }) => {
+  await demo(page);
+  await page.getByRole("button", { name: "View decision brief" }).click();
+  const brief = page.getByRole("region", { name: "Bid decision brief" });
+  await expect(brief).toContainText("CURRENT WORKSPACE");
+  await expect(brief).toContainText("Critical Blocker");
+  await expect(brief).toContainText("2026-10-22");
+  await expect(brief).toContainText("Submission date: 2026-10-27");
+  await expect(brief).toContainText("6 requirements · 4 mandatory · 2 ready · 3 unresolved mandatory · 1 deadline risks");
+  await expect(brief).toContainText("Reference page: 3");
+  await expect(brief).toContainText("not official eligibility");
+  await page.evaluate(() => { window.print = () => { document.documentElement.dataset.printed = "true"; }; });
+  await brief.getByRole("button", { name: "Print decision brief" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-printed", "true");
+  await page.emulateMedia({ media: "print" });
+  await expect(brief).toBeVisible();
+  await expect(page.getByRole("region", { name: "Requirement workspace" })).toBeHidden();
+  await expect(page.locator(".topbar")).toBeHidden();
+  await expect(brief.getByRole("button", { name: "Print decision brief" })).toBeHidden();
+  await page.pdf({ path: "test-results/decision-brief.pdf", preferCSSPageSize: true });
+  await page.screenshot({ path: "test-results/decision-brief-print.png", fullPage: true });
+});
+
+test("mobile what-if comparison and brief remain usable without horizontal overflow", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await demo(page);
+  await page.getByRole("button", { name: "Start what-if scenario" }).click();
+  await requirement(page, "Signed product specification sheet").getByLabel("Estimated preparation days").fill("3");
+  await expect(page.getByRole("region", { name: "What-if comparison" })).toContainText("Action Required");
+  await page.getByRole("button", { name: "View decision brief" }).click();
+  await expect(page.getByRole("region", { name: "Bid decision brief" })).toContainText("HYPOTHETICAL SCENARIO");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: "test-results/scenario-mobile.png", fullPage: true });
 });
 
 for (const [name, width, height] of [["desktop", 1365, 900], ["tablet", 820, 1180], ["mobile", 390, 844]] as const) {

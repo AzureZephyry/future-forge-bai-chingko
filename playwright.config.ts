@@ -3,6 +3,7 @@ import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "./tests",
   testMatch: "workspace.spec.ts",
+  outputDir: "test-results/browser",
   workers: 1,
   retries: 0,
   reporter: "list",

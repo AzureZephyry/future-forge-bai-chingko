@@ -4,6 +4,8 @@ import { OpportunityForm } from "./components/OpportunityForm";
 import type { OpportunityFields } from "./components/OpportunityForm";
 import { RequirementEditor } from "./components/RequirementEditor";
 import { ReadinessDashboard } from "./components/ReadinessDashboard";
+import { ScenarioComparison } from "./components/ScenarioComparison";
+import { DecisionBrief } from "./components/DecisionBrief";
 import { assessWorkspace, DISCLAIMER } from "./lib/readiness.ts";
 import { createDemo } from "./lib/demo.ts";
 import { loadWorkspace, saveWorkspace } from "./lib/storage.ts";
@@ -20,7 +22,10 @@ function restore(): LoadResult {
 
 export default function App() {
   const [initial] = useState(restore);
-  const [workspace, setWorkspace] = useState<TenderWorkspace | null>(initial.workspace);
+  const [savedWorkspace, setWorkspace] = useState<TenderWorkspace | null>(initial.workspace);
+  const [scenario, setScenario] = useState<TenderWorkspace | null>(null);
+  const [briefOpen, setBriefOpen] = useState(false);
+  const workspace = scenario ?? savedWorkspace;
   const [saveState, setSaveState] = useState(initial.message);
   const [creating, setCreating] = useState(initial.workspace === null);
   const [draft, setDraft] = useState<OpportunityFields>(EMPTY_OPPORTUNITY);
@@ -37,17 +42,17 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!workspace) return;
-    if (workspaceErrors(workspace).length) {
+    if (!savedWorkspace) return;
+    if (workspaceErrors(savedWorkspace).length) {
       setSaveState("Invalid draft — not saved. The last valid saved workspace is retained.");
       return;
     }
-    try { setSaveState(saveWorkspace(window.localStorage, workspace).message); }
+    try { setSaveState(saveWorkspace(window.localStorage, savedWorkspace).message); }
     catch { setSaveState("Unable to save locally. Keep this tab open; changes may be lost on refresh."); }
-  }, [workspace]);
+  }, [savedWorkspace]);
 
   const unsaved = (workspace !== null && (workspaceErrors(workspace).length > 0 || saveState.startsWith("Unable")))
-    || (creating && Object.values(draft).some((value) => value.trim().length > 0));
+    || scenario !== null || (creating && Object.values(draft).some((value) => value.trim().length > 0));
   useEffect(() => {
     if (!unsaved) return;
     const protect = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
@@ -56,7 +61,8 @@ export default function App() {
   }, [unsaved]);
 
   function edit(change: (current: TenderWorkspace) => TenderWorkspace) {
-    setWorkspace((current) => current ? { ...change(current), updatedAt: new Date().toISOString() } : current);
+    const update = scenario ? setScenario : setWorkspace;
+    update((current) => current ? { ...change(current), updatedAt: new Date().toISOString() } : current);
     setError("");
   }
 
@@ -69,13 +75,16 @@ export default function App() {
     const errors = workspaceErrors(next);
     if (errors.length) { setError(errors.join(" ")); return; }
     if (workspace && !window.confirm("Replace the current saved workspace with this new opportunity?")) return;
-    setWorkspace(next); setCreating(false); setDraft(EMPTY_OPPORTUNITY); setError(""); setRequirementTitle("");
+    setWorkspace(next); setCreating(false); setDraft(EMPTY_OPPORTUNITY); setError(""); setRequirementTitle(""); setBriefOpen(false);
   }
 
   function loadDemo() {
-    if (workspace && !window.confirm("Replace this workspace with a fresh fictional demo? The current local workspace will be replaced.")) return;
+    const unsavedOpportunity = creating && Object.values(draft).some((value) => value.trim().length > 0);
+    if ((workspace || unsavedOpportunity) && !window.confirm(workspace
+      ? "Replace this workspace with a fresh fictional demo? The current local workspace will be replaced."
+      : "Discard the unsubmitted opportunity details and load the fictional demo?")) return;
     setWorkspace(createDemo(today, crypto.randomUUID(), new Date().toISOString()));
-    setCreating(false); setError(""); setRequirementTitle("");
+    setCreating(false); setDraft(EMPTY_OPPORTUNITY); setError(""); setRequirementTitle(""); setBriefOpen(false);
   }
 
   function addRequirement(event: FormEvent<HTMLFormElement>) {
@@ -91,15 +100,33 @@ export default function App() {
   }
 
   const assessment = workspace ? assessWorkspace(workspace, today) : null;
+  const baselineAssessment = savedWorkspace ? assessWorkspace(savedWorkspace, today) : null;
+
+  function startScenario() {
+    if (!savedWorkspace || workspaceErrors(savedWorkspace).length) return;
+    setScenario(structuredClone(savedWorkspace)); setBriefOpen(false); setError(""); setRequirementTitle("");
+  }
+
+  function discardScenario() {
+    if (!window.confirm("Discard all hypothetical changes and return to the unchanged baseline?")) return;
+    setScenario(null); setBriefOpen(false); setError(""); setRequirementTitle("");
+  }
+
+  function applyScenario() {
+    if (!scenario || workspaceErrors(scenario).length) return;
+    if (!window.confirm("Apply these hypothetical assumptions to your real workspace and save locally? Confirm statuses reflect what you intend to record; this does not verify supporting evidence.")) return;
+    setWorkspace({ ...structuredClone(scenario), updatedAt: new Date().toISOString() });
+    setScenario(null); setBriefOpen(false); setError(""); setRequirementTitle("");
+  }
 
   return <div className="workspace-app">
     <header className="topbar">
       <a className="brand" href="#top"><span className="brand__mark" aria-hidden="true">B</span><span className="brand__name">BidBridge</span></a>
       <span className="topbar__sub">Know Before You Bid.</span>
-      <span className="save-state" role="status">{saveState}</span>
+      <span className="save-state" role="status">{scenario ? "Scenario not saved. Baseline: " : ""}{saveState}</span>
       <div className="header-actions">
-        <button className="secondary-button" type="button" onClick={() => { setCreating(true); setError(""); }}>New opportunity</button>
-        <button className="primary-button" type="button" onClick={loadDemo}>Load fictional demo</button>
+        <button className="secondary-button" type="button" disabled={scenario !== null} onClick={() => { setCreating(true); setError(""); }}>New opportunity</button>
+        <button className="primary-button" type="button" disabled={scenario !== null} onClick={loadDemo}>Load fictional demo</button>
       </div>
     </header>
     <main className="workspace-layout" id="top">
@@ -126,15 +153,21 @@ export default function App() {
         <p>Create an opportunity or load the fictional six-requirement example. Your work is saved only in this browser; avoid entering sensitive personal information.</p>
       </section>}
       {workspace && assessment && <>
+        {scenario && baselineAssessment && <ScenarioComparison baseline={baselineAssessment} scenario={assessment} onDiscard={discardScenario} onApply={applyScenario} />}
         <section className="panel workspace-wide opportunity-overview" aria-label="Current opportunity">
           <div className="section-heading"><span className="section-heading__number">01</span><h2>{workspace.title || "Untitled opportunity"}</h2></div>
           {workspace.fictional && <p className="fictional-label">FICTIONAL DEMONSTRATION — editable planning example</p>}
           <p><strong>{workspace.organization || "Organization not entered"}</strong> · Deadline: <time dateTime={workspace.deadline}>{workspace.deadline || "Not entered"}</time></p>
           {workspace.description && <p className="hint">{workspace.description}</p>}
+          <div className="button-row">
+            {!scenario && <button className="primary-button" type="button" disabled={creating || assessment.errors.length > 0} onClick={startScenario}>Start what-if scenario</button>}
+            <button className="secondary-button" type="button" disabled={assessment.errors.length > 0} onClick={() => setBriefOpen((open) => !open)}>{briefOpen ? "Hide decision brief" : "View decision brief"}</button>
+          </div>
           <details className="opportunity-edit"><summary>Edit opportunity details</summary>
             <OpportunityForm value={workspace} onChange={(patch) => edit((current) => ({ ...current, ...patch }))} />
           </details>
         </section>
+        {briefOpen && assessment.errors.length === 0 && <DecisionBrief workspace={workspace} assessment={assessment} today={today} hypothetical={scenario !== null} onClose={() => setBriefOpen(false)} />}
         <div className="assessment-column" aria-label="Live preparation assessment">
           <ReadinessDashboard assessment={assessment} />
         </div>

@@ -5,6 +5,7 @@ const python = process.platform === "win32" ? ".venv/Scripts/python.exe" : ".ven
 export default defineConfig({
   testDir: "./tests/legacy",
   testMatch: "**/*.spec.ts",
+  outputDir: "test-results/legacy",
   fullyParallel: false,
   workers: 1,
   retries: 0,
