@@ -3,8 +3,9 @@
 Integration branch: `integration/bidbridge`. Christan's recovered backend source
 is `e3214c10fbd5c6762eac2b3a1accfa45fe1aee10`; the preserved AI baseline is
 `d44e3e72f03e59b927a674abe76701d75abdbbb9`. The integration branch did not exist
-when work began. Christan's files merged without conflicts. No AI implementation
-files, retrieval implementation, or frontend files were changed.
+when backend integration began. Christan's files merged without conflicts. The
+AI implementation and retrieval implementation were preserved. The subsequent
+frontend integration is documented in [FRONTEND.md](../FRONTEND.md).
 
 ## Install and run from the repository root
 
@@ -145,16 +146,17 @@ Evidence schemas use [Pydantic strict validation](https://docs.pydantic.dev/late
 - **ALMA:** credentials, endpoints, model identifiers, payload/response formats,
   limits, timeouts, errors, and retry guidance remain undocumented. The adapter
   is intentionally unavailable. No Gemma inference has been tested.
-- **Lawrence:** `origin/feat/retrieval` was observed at
-  `39b85d4cdd9f04092995c40c454f3d16a19bd879`, but is intentionally not merged in
-  this backend-only integration. Its `retrieve_tender_evidence` function needs
-  a thin adapter to the synchronous method above. Its `app.services` imports
-  need reconciliation with repository-root `backend.app` imports. Both branches
-  also add `backend/requirements.txt`, so preserve both dependency sets when
-  merging. Parser duplication can be revisited during that separate integration.
-- **Ali:** implement the multipart request above and consume `uncertainty` and
-  every `sources` entry. No frontend implementation was present on the fetched
-  `origin/feat/frontend`, and no frontend tests were run.
+- **Lawrence:** the latest inspected `origin/feat/retrieval` is
+  `63ed83266a026e258ffa019d13d5b7ffee7e06f3`. It now includes the
+  `TenderRetrievalService` adapter and corrected relative imports after merging
+  this backend baseline. Retrieval remains intentionally unmerged here. Review
+  its tests, PyMuPDF dependency, and dependency lock when integrating it next;
+  use the published adapter instead of recreating it. Parser duplication can
+  be revisited during that separate integration.
+- **Ali:** the root-level React/Vite frontend now sends the multipart request
+  above and renders uncertainty and every source. See [FRONTEND.md](../FRONTEND.md)
+  for browser tests and synchronization. Production retrieval and ALMA remain
+  unconfigured; the browser fixture server is separate and explicitly guarded.
 
 Christan's implementation was present: no replacement backend was invented.
 Repairs touched `app/main.py`, `app/routes/analysis.py`, `app/schemas/assessment.py`,
