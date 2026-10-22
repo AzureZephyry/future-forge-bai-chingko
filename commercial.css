@@ -326,3 +326,113 @@ dialog::backdrop { background: rgb(12 19 14 / 60%); backdrop-filter: blur(3px); 
   .commercial .decision-brief p, .commercial .decision-brief li { font-size: 10pt; color: #111; }
   .commercial .decision-brief h2 { font-size: 20pt; }.commercial .decision-brief h3 { font-size: 12pt; }
 }
+@media screen {
+  .commercial { font-size: 16px; line-height: 1.65; }
+  .commercial .primary-button, .commercial .secondary-button { min-height: 48px; padding: 11px 17px; font-size: 16px; }
+  .commercial .large-button { min-height: 54px; font-size: 17px; }
+  .commercial .text-link { font-size: 16px; }
+  .commercial .eyebrow { font-size: 13px; letter-spacing: .1em; }
+  .commercial .theme-toggle { min-height: 44px; font-size: 15px; }
+  .commercial .marketing-header nav a { font-size: 16px; }
+  .commercial .marketing-footer p, .commercial .marketing-footer nav { font-size: 14px; }
+  .commercial .hero-description, .commercial .editorial-section > p,
+  .commercial .feature-highlight p, .commercial .how-steps p,
+  .commercial .pricing-teaser p, .commercial .marketing-page-heading > p:not(.eyebrow),
+  .commercial .benefit-list li, .commercial .faq-section summary,
+  .commercial .faq-section p, .commercial .feature-chapter > div > p:not(.eyebrow),
+  .commercial .status-explainer p, .commercial .rule-card li,
+  .commercial .pricing-footnote, .commercial .plan-promise { font-size: 16px; line-height: 1.65; }
+  .commercial .marketing-page-heading .demo-label { font-size: 13px !important; }
+  .commercial .plan-price small { font-size: 14px; }
+  .commercial .app-sidebar nav a { min-height: 46px; font-size: 16px; }
+  .commercial .sidebar-caption { font-size: 12px; }
+  .commercial .sidebar-plan .text-link, .commercial .sidebar-back { font-size: 14px; }
+  .commercial .plan-indicator { font-size: 14px; }
+  .commercial .plan-badge { font-size: 13px; }
+  .commercial.app-shell .app-header { min-height: 92px; }
+  .commercial .header-workspace .eyebrow { font-size: 12px; }
+  .commercial .header-workspace strong { font-size: 16px; }
+  .commercial .app-header .header-actions button { font-size: 15px; }
+  .commercial.app-shell .save-state { font-size: 14px; }
+  .commercial .page-heading h1 { font-size: clamp(30px, 3vw, 40px); line-height: 1.18; }
+  .commercial .page-heading > p:not(.eyebrow) { font-size: 16px; line-height: 1.7; }
+  .commercial .panel p { font-size: 16px; line-height: 1.65; }
+  .commercial .panel h2 { font-size: 23px; }
+  .commercial .panel h3 { font-size: 19px; }
+  .commercial .hint, .commercial .notice, .commercial .error,
+  .commercial .scenario-ribbon, .commercial .detail-list > div,
+  .commercial .upload-results { font-size: 14px; line-height: 1.6; }
+  .commercial .field__label { font-size: 15px; }
+  .commercial .field__input { min-height: 48px; font-size: 16px; line-height: 1.5; }
+  .commercial .check-field { font-size: 15px; }
+  .commercial .text-button { font-size: 15px; }
+  .commercial .attachment-link { font-size: 15px; }
+  .commercial .app-footer p { font-size: 14px; }
+  .commercial .metric { gap: 10px; padding: 16px; }
+  .commercial .metric span { font-size: 14px; line-height: 1.4; }
+  .commercial .metric strong { font-size: 30px; }
+  .commercial .metric--priority { border-left: 4px solid var(--brand); background: var(--surface-raised); }
+  .commercial .big-number { font-size: clamp(32px, 3vw, 40px); }
+  .commercial .advisory h2 { font-size: clamp(25px, 2.6vw, 34px); }
+  .commercial .advisory p, .commercial .scenario-panel p,
+  .commercial .scenario-panel li, .commercial .action-item,
+  .commercial .blocker-panel li, .commercial .feasibility,
+  .commercial .progress-panel > div:first-child { font-size: 16px; line-height: 1.65; }
+  .commercial .progress-panel > div:first-child span { font-size: 14px; }
+  .commercial .action-item .hint, .commercial .advisory-disclaimer { font-size: 14px; }
+  .commercial .comparison-grid h3 { font-size: 20px; }
+  .commercial .comparison-grid > div { padding: 20px; }
+  .commercial .comparison-grid > div:first-child { border-top: 4px solid var(--sage); }
+  .commercial .comparison-grid > div:last-child { border-top: 4px solid var(--brand); }
+  .commercial .document-dropzone small, .commercial .upload-panel .document-heading p,
+  .commercial .count-badge { font-size: 14px; }
+  .commercial .document-heading p { font-size: 14px !important; }
+  .commercial .file-type { font-size: 13px; }
+  .commercial .upload-allowance-note { margin: 12px 0 20px; padding: 12px 15px; border-left: 4px solid var(--sage); background: var(--sage-bg); color: var(--text); font-size: 15px; }
+  .commercial .workflow-path { padding: 21px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--sand); }
+  .commercial .workflow-path h2 { margin: 0 0 14px; font-size: 21px; }
+  .commercial .workflow-path ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .commercial .workflow-path li { min-width: 0; }
+  .commercial .workflow-path a { display: grid; align-content: start; gap: 3px; height: 100%; min-height: 74px; padding: 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); text-decoration: none; transition: border-color var(--duration), background var(--duration); }
+  .commercial .workflow-path a:hover { border-color: var(--brand); background: var(--surface-raised); }
+  .commercial .workflow-path a span { color: var(--brand-dark); font-size: 13px; font-weight: 650; }
+  .commercial .workflow-path a strong { font-size: 16px; }
+  .commercial .empty .button-row { justify-content: center; }
+  .commercial .next-action { padding: 20px; border: 1px solid var(--border); border-left: 5px solid var(--brand); border-radius: var(--radius); background: var(--surface); }
+  .commercial .next-action .eyebrow { margin: 0 0 8px; }
+  .commercial .next-action h2 { margin: 0 0 7px; font-size: 23px; }
+  .commercial .next-action p:not(.eyebrow) { margin: 0 0 15px; font-size: 16px; }
+  .commercial .upload-panel .plan-indicator { margin-bottom: 0; }
+  .commercial .document-dropzone { padding: 30px 22px; }
+}
+@media screen and (max-width: 900px) {
+  .commercial .app-sidebar nav { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 10px; scrollbar-width: thin; }
+  .commercial .app-sidebar nav a { flex: 0 0 auto; flex-direction: row; gap: 9px; min-height: 46px; padding: 10px 12px; white-space: nowrap; }
+  .commercial .app-sidebar nav svg { width: 19px; height: 19px; }
+  .commercial .sidebar-plan { flex-wrap: wrap; }
+  .commercial .sidebar-plan .hint { display: none; }
+}
+@media screen and (max-width: 650px) {
+  .commercial .marketing-hero h1 { font-size: clamp(48px, 13vw, 64px); }
+  .commercial .marketing-header nav { justify-content: flex-start; gap: 24px; overflow-x: auto; }
+  .commercial .app-sidebar { padding: 16px 14px 12px; }
+  .commercial .app-sidebar nav { margin-right: -14px; padding-right: 14px; }
+  .commercial .app-sidebar nav a { font-size: 15px; padding: 9px 11px; }
+  .commercial.app-shell .app-header .header-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+  .commercial.app-shell .app-header .header-actions .theme-toggle { grid-column: 1 / -1; justify-self: start; margin: 0; }
+  .commercial.app-shell .app-header .header-actions > :is(.primary-button, .secondary-button) { width: 100%; min-width: 0; }
+  .commercial .sidebar-plan { gap: 10px; font-size: 13px; }
+  .commercial .sidebar-plan .text-link { font-size: 14px; }
+  .commercial .workflow-path { padding: 16px; }
+  .commercial .workflow-path ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .commercial .workflow-path a { min-height: 70px; padding: 10px; }
+  .commercial .workflow-path a span { font-size: 12px; }
+  .commercial .workflow-path a strong { font-size: 15px; }
+  .commercial .metric { padding: 12px; }
+  .commercial .metric strong { font-size: 28px; }
+  .commercial .document-heading { gap: 12px; }
+}
+@media screen and (max-width: 380px) {
+  .commercial .app-sidebar nav a { font-size: 14px; padding: 8px 9px; }
+  .commercial .workflow-path ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

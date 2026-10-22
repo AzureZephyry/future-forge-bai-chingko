@@ -23,7 +23,7 @@ illustrative ₱99 per 168-hour period, activated locally with no payment.
 4. Open **Documents** and select three files. Show allowance **3 → 0** and
    the real evidence library. A fourth file is rejected without consuming more.
 5. Select **View Pro Weekly**, then **Preview Pro Weekly** and **Activate Demo
-   Pro**. No card, account or payment is involved. Show expiry in **Plan & usage**.
+   Pro**. No card, account or payment is involved. Show expiry in **Plan & Pricing**.
 6. Return to Documents and accept the fourth file. Pro removes the daily count
    cap; the 10 MB per-file limit and browser storage capacity still apply.
 7. Open **Gap-to-Go**, start a scenario, and change the specification estimate

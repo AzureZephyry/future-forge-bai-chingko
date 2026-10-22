@@ -216,8 +216,12 @@ Select **Start Free** to open the workspace, or compare plans at `/pricing`.
 | `/app/documents` | Supporting files and upload allowance |
 | `/app/simulator` | Gap-to-Go what-if comparison, apply, and discard |
 | `/app/report` | Printable baseline or scenario decision brief |
-| `/app/plan` | Demo plan status, usage, expiration, restart, and end |
+| `/app/plan` | Plan & Pricing: local usage, expiration, restart, and end |
 | `/legacy` | Preserved original AI assessment frontend |
+
+Inside the workspace, Overview presents the recommended path: create an
+opportunity, add requirements, attach documents, review readiness, simulate
+changes in Gap-to-Go, and review the decision brief.
 
 ### Production build and preview
 

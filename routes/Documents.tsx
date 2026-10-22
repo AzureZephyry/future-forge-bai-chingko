@@ -46,6 +46,7 @@ export function Documents() {
   }
   return <div className="page-stack"><div className="page-heading"><p className="eyebrow">Keep the supporting details close</p><h1>Documents & evidence</h1><p>A local home for the files behind your preparation. Attachments never change readiness automatically.</p></div>
     <section className="panel upload-panel"><div className="section-heading"><Icon name="upload" /><h2>Add supporting files</h2></div><PlanIndicator />
+      <p className="upload-allowance-note">Free includes three accepted uploads per local day; the allowance resets at {formatLocalTime(nextLocalMidnight(c.now))}. Pro Weekly removes the daily count cap during a simulated seven-day period, with no payment.</p>
       <div className={"document-dropzone " + (dragging ? "dragging" : "")} onDragOver={(event) => { event.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={(event) => { event.preventDefault(); setDragging(false); void upload(Array.from(event.dataTransfer.files)); }}>
         <Icon name="documents" /><strong>Bring your evidence together.</strong><p>Drop files here, or choose them from your device.</p>
         <label className="primary-button file-picker">Choose supporting files<input type="file" multiple accept={FILE_ACCEPT} aria-label="Choose supporting files" disabled={disabled} onChange={(event) => { const files = Array.from(event.target.files ?? []); event.target.value = ""; void upload(files); }} /></label>

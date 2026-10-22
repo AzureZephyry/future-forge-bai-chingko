@@ -161,7 +161,7 @@ test("Pro bypasses count limits; ending it restores previously consumed Free quo
   await expect(page.locator(".upload-results")).toContainText("5 accepted · 0 not accepted");
   await expect(library(page).getByRole("article")).toHaveCount(7);
   expect((await snapshot(page)).usage.acceptedCount).toBe(2);
-  await page.getByRole("navigation", { name:"Application navigation" }).getByRole("link", { name:"Plan & usage" }).click();
+  await page.getByRole("navigation", { name:"Application navigation" }).getByRole("link", { name:"Plan & Pricing" }).click();
   await page.getByRole("button", { name:"End demo Pro" }).click();
   await page.getByRole("button", { name:"Return to Free", exact:true }).click();
   await expect(quota(page)).toContainText("1 of 3 uploads remaining");
@@ -238,10 +238,18 @@ test("unavailable IndexedDB reports an error without blocking preparation tools"
   await expect(page.getByLabel("Preparation advisory")).toContainText("Critical Blocker");
 });
 
-const routes = [["/","Know before"],["/features","Less uncertainty"],["/pricing","Start with clarity"],["/app","Know your gaps"],["/app/opportunity","Opportunity & requirements"],["/app/documents","Documents & evidence"],["/app/simulator","A different assumption"],["/app/report","Your bid decision brief"],["/app/plan","Plan & usage"]] as const;
+const routes = [["/","Know before"],["/features","Less uncertainty"],["/pricing","Start with clarity"],["/app","Know your gaps"],["/app/opportunity","Opportunity & requirements"],["/app/documents","Documents & evidence"],["/app/simulator","A different assumption"],["/app/report","Your bid decision brief"],["/app/plan","Plan & Pricing"]] as const;
 for (const [route, heading] of routes) test(`direct visit and refresh work at ${route}`, async ({ page }) => {
   await page.goto(route); await expect(page.getByRole("heading",{level:1})).toContainText(heading);
   await page.reload(); await expect(page.getByRole("heading",{level:1})).toContainText(heading);
+});
+test("first-time dashboard offers a clear path and a sample opportunity", async ({ page }) => {
+  await page.goto("/app");
+  await expect(page.getByRole("navigation", { name:"Preparation path" }).getByRole("link")).toHaveCount(6);
+  await expect(page.getByRole("link", { name:"Create opportunity", exact:true })).toBeVisible();
+  await page.getByRole("button", { name:"Try fictional sample" }).click();
+  await expect(page).toHaveURL(/\/app\/opportunity$/);
+  await expect(page.getByText("FICTIONAL DEMONSTRATION — editable planning example")).toBeVisible();
 });
 test("unknown routes provide recovery, and original legacy page remains accessible", async ({ page }) => {
   await page.goto("/not-a-page"); await expect(page.getByRole("heading",{level:1})).toContainText("Let's get you back");

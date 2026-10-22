@@ -15,11 +15,13 @@ export function ReadinessDashboard({ assessment, actionPath = "" }: { assessment
     {a.errors.length > 0 && <ul className="error" role="alert">{a.errors.map((error) => <li key={error}>{error}</li>)}</ul>}
     {a.errors.length === 0 && <><section className="metrics" aria-label="Readiness summary">
       {[
-        ["Recorded requirements", a.total], ["Mandatory requirements", a.mandatory],
-        ["Ready items", a.counts.ready], ["Unresolved mandatory", a.outstandingMandatory],
-        ["Deadline risks", a.deadlineRisks], ["Calendar days remaining", a.remainingDays === null ? "—" : a.remainingDays],
-      ].map(([label, value]) => <div className="metric" key={label}><span>{label}</span><strong>{value}</strong></div>)}
+        ["Unresolved mandatory", a.outstandingMandatory], ["Deadline risks", a.deadlineRisks],
+        ["Calendar days remaining", a.remainingDays === null ? "—" : a.remainingDays],
+        ["Ready items", a.counts.ready], ["Recorded requirements", a.total],
+        ["Mandatory requirements", a.mandatory],
+      ].map(([label, value], index) => <div className={"metric" + (index < 2 ? " metric--priority" : "")} key={label}><span>{label}</span><strong>{value}</strong></div>)}
     </section>
+    {a.actions[0] && actionPath && <section className="next-action" aria-label="Highest-priority next action"><p className="eyebrow">Highest-priority next action</p><h2>{a.actions[0].title}</h2><p>{a.actions[0].recommendation}</p><Link className="primary-button" to={actionPath + "#requirement-" + encodeURIComponent(a.actions[0].id)}>Review this requirement</Link></section>}
     <section className="progress-panel" aria-label="Recorded preparation progress">
       <div><strong>{a.readyPercentage === null ? "Not assessed" : a.readyPercentage + "% recorded ready"}</strong><span>Ready items ÷ all recorded items</span></div>
       {a.readyPercentage !== null && <progress value={a.readyPercentage} max={100} aria-label="Recorded ready percentage" />}

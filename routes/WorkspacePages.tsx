@@ -10,7 +10,8 @@ import { PlanIndicator } from "../components/PlanControls";
 import { Icon } from "../components/Icon";
 
 export function WorkspaceEmpty() {
-  return <section className="empty"><Icon name="opportunity" /><h2>A clearer bid starts here.</h2><p>Create an opportunity and record its requirements, or explore the fictional example.</p><Link className="primary-button" to="/app/opportunity">Create opportunity</Link></section>;
+  const w = useWorkspace(), navigate = useNavigate();
+  return <section className="empty"><Icon name="opportunity" /><h2>A clearer bid starts here.</h2><p>Create an opportunity and record its requirements, or explore the fictional example.</p><div className="button-row"><Link className="primary-button" to="/app/opportunity">Create opportunity</Link><button className="secondary-button" type="button" onClick={() => { w.loadDemo(); navigate("/app/opportunity"); }}>Try fictional sample</button></div></section>;
 }
 function OpportunityOverview({ editable = false }: { editable?: boolean }) {
   const w = useWorkspace();
@@ -26,7 +27,7 @@ function OpportunityOverview({ editable = false }: { editable?: boolean }) {
 export function RequirementWorkspace() {
   const w = useWorkspace(), { snapshot } = useCommerce();
   if (!w.workspace || !w.assessment) return null;
-  return <section className="requirements-column" aria-label="Requirement workspace">
+  return <section className="requirements-column" id="requirements" aria-label="Requirement workspace">
     <div className="section-heading"><h2>Requirement workspace</h2></div>
     <p className="hint">Record the tender's requirements and your preparation status. Ready is your statement, not independent verification.</p>
     <form className="panel add-requirement" onSubmit={w.addRequirement} aria-label="Add requirement">
@@ -45,9 +46,17 @@ export function RequirementWorkspace() {
 }
 export function Dashboard() {
   const w = useWorkspace(), c = useCommerce();
+  const preparationPath = [
+    ["/app/opportunity", "Create opportunity"],
+    ["/app/opportunity#requirements", "Add requirements"],
+    ["/app/documents", "Attach documents"],
+    ["/app", "Review readiness"],
+    ["/app/simulator", "Simulate changes"],
+    ["/app/report", "Review decision"],
+  ] as const;
   return <div className="page-stack">
     <div className="page-heading"><p className="eyebrow">Your preparation, at a glance</p><h1>Know your gaps.<br />Find your next move.</h1><p>One clear view of what is ready, what needs attention, and where to go next.</p></div>
-    <div className="quick-actions"><Link to="/app/opportunity"><Icon name="opportunity" /> Open opportunity</Link><Link to="/app/documents"><Icon name="upload" /> Upload documents</Link><Link to="/app/simulator"><Icon name="simulator" /> Open Gap-to-Go</Link><Link to="/app/report"><Icon name="report" /> View decision brief</Link></div>
+    <nav className="workflow-path" aria-label="Preparation path"><h2>Your preparation path</h2><ol>{preparationPath.map(([to, label], index) => <li key={label}><Link to={to}><span>Step {index + 1}</span><strong>{label}</strong></Link></li>)}</ol></nav>
     {w.workspace && w.assessment ? <><OpportunityOverview /><div className="dashboard-grid"><div className="assessment-column"><ReadinessDashboard assessment={w.assessment} actionPath="/app/opportunity" /></div><aside className="page-stack"><section className="panel"><p className="eyebrow">Evidence library</p><strong className="big-number">{c.snapshot?.documents.length ?? "—"}</strong><h2>Documents on this browser</h2><p>Organize supporting files without changing your recorded readiness.</p><Link to="/app/documents" className="text-link">Open evidence library →</Link></section><section className="panel"><h2>Your plan</h2><PlanIndicator /><Link to="/app/plan" className="text-link">Manage demo access →</Link></section><section className="panel sage-panel"><Icon name="simulator" /><h2>What could change?</h2><p>Test an estimate or status in an independent copy. See which risks would clear before changing your workspace.</p><Link to="/app/simulator" className="secondary-button">Explore a scenario</Link></section></aside></div></> : <WorkspaceEmpty />}
   </div>;
 }

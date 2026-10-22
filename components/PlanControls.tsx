@@ -29,7 +29,7 @@ export function PlanManagement() {
   const [ending, setEnding] = useState(false);
   const expired = c.subscription.plan === "pro_weekly" && c.plan === "free";
   return <div className="page-stack">
-    <div className="page-heading"><p className="eyebrow">Your local access</p><h1>Plan & usage</h1><p>Choose the upload capacity that fits your preparation week.</p></div>
+    <div className="page-heading"><p className="eyebrow">Your local access</p><h1>Plan & Pricing</h1><p>Free includes three uploads per local day. Pro Weekly removes the daily count cap during a simulated seven-day period; no payment is collected.</p></div>
     <section className="panel plan-detail"><PlanIndicator /><h2>{c.plan === "pro_weekly" ? "Your Pro preview is active." : "Keep preparing with Free."}</h2>
       {expired && <p className="notice">Your demo Pro period expired. Free limits now apply; your documents remain available. There was no charge or automatic renewal.</p>}
       {c.subscription.activatedAt && <dl className="detail-list"><div><dt>Demo activated</dt><dd>{formatLocalTime(c.subscription.activatedAt)}</dd></div><div><dt>Expires</dt><dd>{formatLocalTime(c.subscription.expiresAt!)}</dd></div><div><dt>Time remaining</dt><dd>{accessRemaining(c.subscription, c.now)}</dd></div></dl>}
