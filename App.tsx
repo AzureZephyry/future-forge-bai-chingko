@@ -1,204 +1,160 @@
-import { useRef, useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
-import { analyze, DEMO_MODE } from "./api";
-import { OverallBanner } from "./components/OverallBanner";
-import { ProfileForm } from "./components/ProfileForm";
-import { RequirementCard } from "./components/RequirementCard";
-import { STATUS_LABELS } from "./components/StatusBadge";
-import type { AnalysisResponse, RequirementStatus, SupplierProfile } from "./types";
-import { isProfileReady, validateFile } from "./validation";
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
+import { OpportunityForm } from "./components/OpportunityForm";
+import type { OpportunityFields } from "./components/OpportunityForm";
+import { RequirementEditor } from "./components/RequirementEditor";
+import { ReadinessDashboard } from "./components/ReadinessDashboard";
+import { assessWorkspace, DISCLAIMER } from "./lib/readiness.ts";
+import { createDemo } from "./lib/demo.ts";
+import { loadWorkspace, saveWorkspace } from "./lib/storage.ts";
+import type { LoadResult } from "./lib/storage.ts";
+import { localDate, workspaceErrors } from "./lib/workspace.ts";
+import type { BidRequirement, TenderWorkspace } from "./lib/workspace.ts";
 
-const DEFAULT_PROFILE: SupplierProfile = {
-  business_name: "",
-  industry: "",
-  business_permit: "unknown",
-  registration: "unknown",
-  delivery_capacity: "",
-};
+const EMPTY_OPPORTUNITY: OpportunityFields = { title: "", organization: "", deadline: "", description: "" };
+
+function restore(): LoadResult {
+  try { return loadWorkspace(window.localStorage); }
+  catch { return { state: "unavailable", workspace: null, message: "Browser storage is unavailable. Work remains in this tab only." }; }
+}
 
 export default function App() {
-  const [file, setFile] = useState<File | null>(null);
-  const [profile, setProfile] = useState<SupplierProfile>(DEFAULT_PROFILE);
-  const [result, setResult] = useState<AnalysisResponse | null>(null);
-  const [previous, setPrevious] = useState<AnalysisResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState<{ file: File; profile: SupplierProfile } | null>(null);
-  const fileInput = useRef<HTMLInputElement>(null);
-  const inFlight = useRef(false);
+  const [initial] = useState(restore);
+  const [workspace, setWorkspace] = useState<TenderWorkspace | null>(initial.workspace);
+  const [saveState, setSaveState] = useState(initial.message);
+  const [creating, setCreating] = useState(initial.workspace === null);
+  const [draft, setDraft] = useState<OpportunityFields>(EMPTY_OPPORTUNITY);
+  const [error, setError] = useState("");
+  const [requirementTitle, setRequirementTitle] = useState("");
+  const [newMandatory, setNewMandatory] = useState(true);
+  const [today, setToday] = useState(() => localDate(new Date()));
 
-  const canSubmit = file !== null && isProfileReady(profile) && !loading;
-  const stale = submitted !== null && (submitted.file !== file || JSON.stringify(submitted.profile) !== JSON.stringify(profile));
+  useEffect(() => {
+    const update = () => setToday(localDate(new Date()));
+    const timer = window.setInterval(update, 30_000);
+    window.addEventListener("focus", update);
+    return () => { window.clearInterval(timer); window.removeEventListener("focus", update); };
+  }, []);
 
-  function selectFile(event: ChangeEvent<HTMLInputElement>) {
-    const selected = event.target.files?.[0];
-    if (!selected) return;
-    const message = validateFile(selected);
-    setError(message);
-    setFile(message ? null : selected);
-    if (message) event.target.value = "";
-  }
-
-  function removeFile() {
-    setFile(null);
-    setError(null);
-    if (fileInput.current) fileInput.current.value = "";
-  }
-
-  function formatFileSize(bytes: number): string {
-    return bytes < 1024 * 1024
-      ? `${Math.max(1, Math.round(bytes / 1024))} KB`
-      : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-
-  async function run(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!file || !canSubmit || inFlight.current) return;
-    inFlight.current = true;
-    setLoading(true);
-    setError(null);
-    try {
-      const next = await analyze(file, profile);
-      setPrevious(submitted?.file === file ? result : null);
-      setResult(next);
-      setSubmitted({ file, profile: { ...profile } });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong.");
-    } finally {
-      setLoading(false);
-      inFlight.current = false;
+  useEffect(() => {
+    if (!workspace) return;
+    if (workspaceErrors(workspace).length) {
+      setSaveState("Invalid draft — not saved. The last valid saved workspace is retained.");
+      return;
     }
+    try { setSaveState(saveWorkspace(window.localStorage, workspace).message); }
+    catch { setSaveState("Unable to save locally. Keep this tab open; changes may be lost on refresh."); }
+  }, [workspace]);
+
+  const unsaved = (workspace !== null && (workspaceErrors(workspace).length > 0 || saveState.startsWith("Unable")))
+    || (creating && Object.values(draft).some((value) => value.trim().length > 0));
+  useEffect(() => {
+    if (!unsaved) return;
+    const protect = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", protect);
+    return () => window.removeEventListener("beforeunload", protect);
+  }, [unsaved]);
+
+  function edit(change: (current: TenderWorkspace) => TenderWorkspace) {
+    setWorkspace((current) => current ? { ...change(current), updatedAt: new Date().toISOString() } : current);
+    setError("");
   }
 
-  function hasChanged(requirement: string, status: string): boolean {
-    // Generated ordinal IDs can refer to different requirements after reassessment.
-    const before = previous?.requirements.find((r) => r.requirement === requirement);
-    return before !== undefined && before.status !== status;
+  function createOpportunity(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const next: TenderWorkspace = {
+      ...draft, title: draft.title.trim(), organization: draft.organization.trim(),
+      id: crypto.randomUUID(), fictional: false, requirements: [], updatedAt: new Date().toISOString(),
+    };
+    const errors = workspaceErrors(next);
+    if (errors.length) { setError(errors.join(" ")); return; }
+    if (workspace && !window.confirm("Replace the current saved workspace with this new opportunity?")) return;
+    setWorkspace(next); setCreating(false); setDraft(EMPTY_OPPORTUNITY); setError(""); setRequirementTitle("");
   }
 
-  return (
-    <div className="page">
-      <header className="topbar">
-        <a className="brand" href="#top" aria-label="BidBridge home">
-          <span className="brand__mark" aria-hidden="true">B</span>
-          <span className="brand__name">BidBridge</span>
-        </a>
-        <span className="topbar__sub">Procurement readiness</span>
-        {DEMO_MODE && <span className="mock-badge"><span /> Fixture demo · No live AI</span>}
-      </header>
+  function loadDemo() {
+    if (workspace && !window.confirm("Replace this workspace with a fresh fictional demo? The current local workspace will be replaced.")) return;
+    setWorkspace(createDemo(today, crypto.randomUUID(), new Date().toISOString()));
+    setCreating(false); setError(""); setRequirementTitle("");
+  }
 
-      <main className="layout" id="top">
-        <section className="intro">
-          <p className="intro__eyebrow">A clearer path to your next bid</p>
-          <h1>Know where you stand<br className="intro__break" /> before you bid.</h1>
-          <p className="intro__copy">Review tender requirements against your supplier profile, with the evidence and next steps in one place.</p>
-        </section>
+  function addRequirement(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!workspace || workspace.requirements.length >= 100) { setError("A workspace supports up to 100 requirements."); return; }
+    if (!requirementTitle.trim()) { setError("Enter a nonblank requirement title."); return; }
+    const item: BidRequirement = {
+      id: crypto.randomUUID(), title: requirementTitle.trim(), mandatory: newMandatory,
+      status: "unknown", estimatedDays: null, referencePage: null, notes: "",
+    };
+    edit((current) => ({ ...current, requirements: [...current.requirements, item] }));
+    setRequirementTitle("");
+  }
 
-        <form className="panel" onSubmit={run} aria-label="Bid readiness inputs">
-          <fieldset disabled={loading}>
-          <legend className="visually-hidden">Tender and supplier information</legend>
-          <div className="section-heading">
-            <span className="section-heading__number">01</span>
-            <h2 className="panel__title">Tender document</h2>
+  const assessment = workspace ? assessWorkspace(workspace, today) : null;
+
+  return <div className="workspace-app">
+    <header className="topbar">
+      <a className="brand" href="#top"><span className="brand__mark" aria-hidden="true">B</span><span className="brand__name">BidBridge</span></a>
+      <span className="topbar__sub">Know Before You Bid.</span>
+      <span className="save-state" role="status">{saveState}</span>
+      <div className="header-actions">
+        <button className="secondary-button" type="button" onClick={() => { setCreating(true); setError(""); }}>New opportunity</button>
+        <button className="primary-button" type="button" onClick={loadDemo}>Load fictional demo</button>
+      </div>
+    </header>
+    <main className="workspace-layout" id="top">
+      <section className="intro workspace-intro">
+        <p className="intro__eyebrow">Procurement preparation, made clearer</p>
+        <h1>Know your gaps.<br />Find your next move.</h1>
+        <p className="intro__copy">Track requirements, spot deadline risks, and turn preparation gaps into a practical plan. Decisions update as your information changes.</p>
+        <p className="local-note">Local workspace · No account or AI service required</p>
+      </section>
+      {error && <p className="error workspace-wide" role="alert">{error}</p>}
+      {!workspace && initial.state !== "loaded" && initial.state !== "empty" && <p className="notice workspace-wide">{initial.message}</p>}
+      {creating && <section className="panel workspace-wide" aria-label="Create opportunity">
+        <div className="section-heading"><span className="section-heading__number">01</span><h2>Create an opportunity</h2></div>
+        <p className="hint">Copy details from your tender. BidBridge does not invent requirements or legal rules.</p>
+        <form onSubmit={createOpportunity}>
+          <OpportunityForm value={draft} onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))} />
+          <div className="button-row"><button className="primary-button" type="submit">Create workspace</button>
+            {workspace && <button className="secondary-button" type="button" onClick={() => { setCreating(false); setError(""); }}>Cancel creation</button>}
           </div>
-          <label className="field">
-            <span className="field__label">Procurement PDF (text-based)</span>
-            <span className={`upload-control${file ? " upload-control--selected" : ""}`}>
-              <span className="upload-control__icon" aria-hidden="true">
-                {file ? "✓" : "↑"}
-              </span>
-              <span className="upload-control__copy">
-                <strong>{file ? file.name : "Choose a tender PDF"}</strong>
-                <small>{file ? `${formatFileSize(file.size)} · Ready to review` : "PDF format · Select a file from your device"}</small>
-              </span>
-              <span className="upload-control__action">{file ? "Change" : "Browse"}</span>
-              <input
-                ref={fileInput}
-                type="file"
-                accept="application/pdf,.pdf"
-                aria-label="Choose procurement PDF"
-                onChange={selectFile}
-              />
-            </span>
-          </label>
-          <p className="hint">Text-based PDF · Up to 15 MiB · Scanned images are not supported.</p>
-          {file && <button type="button" className="text-button" onClick={removeFile}>Remove PDF</button>}
-
-          <div className="section-heading section-heading--profile">
-            <span className="section-heading__number">02</span>
-            <h2 className="panel__title">Supplier profile</h2>
-          </div>
-          <p className="hint">Answers are self-reported and are not proof of compliance.</p>
-          <ProfileForm profile={profile} onChange={setProfile} />
-          </fieldset>
-
-          <button className="btn" type="submit" disabled={!canSubmit}>
-            {loading ? "Analyzing..." : result ? "Reassess Bid Readiness" : "Analyze Bid Readiness"}
-          </button>
-          {!file && <p className="hint upload-hint">Choose a PDF to enable analysis.</p>}
-          {!isProfileReady(profile) && <p className="hint">Complete every supplier field. Choose or enter “unknown” if information is unavailable.</p>}
-          {error && (
-            <p className="error" role="alert">
-              {error}
-            </p>
-          )}
         </form>
-
-        <section className="results" aria-label="Gap-to-Go assessment" aria-busy={loading}>
-          {!result && !loading && (
-            <div className="empty empty--welcome">
-              <div className="empty__illustration" aria-hidden="true">
-                <span className="empty__paper"><i /><i /><i /></span>
-                <span className="empty__spark">✦</span>
-              </div>
-              <p className="empty__eyebrow">Your review starts here</p>
-              <h2>Make the tender easier to act on.</h2>
-              <p>Upload a document and add your supplier details to see requirements, evidence, and suggested next steps together.</p>
-              <div className="empty__steps" aria-label="Review steps">
-                <span><b>1</b> Upload</span><span><b>2</b> Compare</span><span><b>3</b> Review evidence</span>
-              </div>
-            </div>
-          )}
-          {loading && (
-            <div className="empty empty--loading" role="status" aria-live="polite">
-              <span className="loading-spinner" aria-hidden="true" />
-              <h2>{DEMO_MODE ? "Preparing fixture assessment" : "Reviewing your tender"}</h2>
-              <p>{DEMO_MODE ? "Running the fictional demonstration through the backend. No live AI inference." : "Checking requirements and preparing the evidence for your review."}</p>
-            </div>
-          )}
-          {result && !loading && (
-            <>
-              <div className="results__header">
-                <p className="results__eyebrow">Gap-to-Go assessment</p>
-                <span className="results__count">{result.requirements.length} {result.requirements.length === 1 ? "requirement" : "requirements"}</span>
-              </div>
-              <h2 className="results__title">{result.tender.title ?? "Your bid readiness review"}</h2>
-              <p className="hint">
-                Deadline: {result.tender.deadline ?? "Not established from supplied evidence"}
-              </p>
-              {stale && <p className="notice" role="status">Inputs changed. These findings reflect your previous submission. Reassess to review the updated information.</p>}
-              {error && <p className="notice">The latest request failed. Showing the last successful assessment; no new result was produced.</p>}
-              <OverallBanner overall={result.overall} />
-              <aside className="uncertainty" aria-label="Assessment limitations">
-                <h3>Evidence limits & uncertainty</h3>
-                <p>{result.uncertainty || "Review the supplied evidence before making a bidding decision."}</p>
-              </aside>
-              <div className="status-summary" aria-label="Requirement status summary">
-                {(Object.keys(STATUS_LABELS) as RequirementStatus[]).map((status) => (
-                  <div key={status} className={`status-summary__item badge--${status}`}>
-                    <strong>{result.requirements.filter((item) => item.status === status).length}</strong>
-                    <span>{STATUS_LABELS[status]}</span>
-                  </div>
-                ))}
-              </div>
-              {result.requirements.length === 0 && <p className="notice">No requirements were established. Review the uncertainty above before taking action.</p>}
-              {result.requirements.map((r) => (
-                <RequirementCard key={r.id} item={r} changed={hasChanged(r.requirement, r.status)} />
-              ))}
-            </>
-          )}
+      </section>}
+      {!workspace && <section className="empty workspace-wide">
+        <h2>Your next bid starts with a clear checklist.</h2>
+        <p>Create an opportunity or load the fictional six-requirement example. Your work is saved only in this browser; avoid entering sensitive personal information.</p>
+      </section>}
+      {workspace && assessment && <>
+        <section className="panel workspace-wide opportunity-overview" aria-label="Current opportunity">
+          <div className="section-heading"><span className="section-heading__number">01</span><h2>{workspace.title || "Untitled opportunity"}</h2></div>
+          {workspace.fictional && <p className="fictional-label">FICTIONAL DEMONSTRATION — editable planning example</p>}
+          <p><strong>{workspace.organization || "Organization not entered"}</strong> · Deadline: <time dateTime={workspace.deadline}>{workspace.deadline || "Not entered"}</time></p>
+          {workspace.description && <p className="hint">{workspace.description}</p>}
+          <details className="opportunity-edit"><summary>Edit opportunity details</summary>
+            <OpportunityForm value={workspace} onChange={(patch) => edit((current) => ({ ...current, ...patch }))} />
+          </details>
         </section>
-      </main>
-    </div>
-  );
+        <div className="assessment-column" aria-label="Live preparation assessment">
+          <ReadinessDashboard assessment={assessment} />
+        </div>
+        <section className="requirements-column" aria-label="Requirement workspace">
+          <div className="section-heading"><span className="section-heading__number">02</span><h2>Requirement workspace</h2></div>
+          <p className="hint">Copy the tender's requirements, then record what is prepared. All edits recalculate instantly. Ready is your statement, not independent verification.</p>
+          <form className="panel add-requirement" onSubmit={addRequirement} aria-label="Add requirement">
+            <label className="field"><span className="field__label">New requirement title</span>
+              <input className="field__input" required maxLength={240} value={requirementTitle} onChange={(event) => setRequirementTitle(event.target.value)} />
+            </label>
+            <label className="check-field"><input type="checkbox" checked={newMandatory} onChange={(event) => setNewMandatory(event.target.checked)} /> New item is mandatory</label>
+            <button className="primary-button" disabled={workspace.requirements.length >= 100} type="submit">Add requirement</button>
+          </form>
+          {workspace.requirements.length === 0 && <p className="notice">No requirements recorded. An empty checklist is not ready for review.</p>}
+          {workspace.requirements.map((item) => <RequirementEditor key={item.id} item={item} remainingDays={assessment.remainingDays}
+            onChange={(patch) => edit((current) => ({ ...current, requirements: current.requirements.map((entry) => entry.id === item.id ? { ...entry, ...patch } : entry) }))}
+            onRemove={() => { if (window.confirm("Remove " + item.title + " from this checklist?")) edit((current) => ({ ...current, requirements: current.requirements.filter((entry) => entry.id !== item.id) })); }} />)}
+        </section>
+      </>}
+      <footer className="workspace-wide workspace-footer"><p>{DISCLAIMER}</p><p>One workspace, stored on this device. No government-portal connection or automated bid submission.</p></footer>
+    </main>
+  </div>;
 }

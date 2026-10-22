@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { test, expect, type Page } from "@playwright/test";
-import type { AnalysisResponse } from "../types";
+import type { AnalysisResponse } from "../../types";
 
 const python = process.platform === "win32" ? ".venv/Scripts/python.exe" : ".venv/bin/python";
 const pdf = execFileSync(python, ["-B", "-m", "tests.fixture_backend"], { windowsHide: true });
@@ -57,7 +57,7 @@ test.beforeAll(async ({ request }) => {
 test.beforeEach(async ({ page }) => {
   browserErrors = [];
   page.on("pageerror", (error) => browserErrors.push(error.message));
-  await page.goto("/");
+  await page.goto("/legacy");
   // Browser protocols can omit multipart postData for file uploads. Observe the
   // real FormData before fetch, then let the request reach the real backend.
   await page.evaluate(() => {

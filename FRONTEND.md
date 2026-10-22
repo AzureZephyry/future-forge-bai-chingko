@@ -1,5 +1,10 @@
 # BidBridge frontend and full-stack integration
 
+> Historical AI-flow integration guide. The current primary product is the
+> deterministic workspace described in [README.md](README.md). This earlier
+> flow is now isolated at `/legacy`; run its preserved browser suite with
+> `npm run test:legacy`. It is not a dependency of the new workspace.
+
 The React + Vite + TypeScript frontend lives at the **repository root**, alongside
 `backend/`. Preserve that layout when synchronizing Ali's branch. Frontend source
 was merged from `d2ce262842960f643d5ea3a1c5b712c4754e448e` onto integration

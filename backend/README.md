@@ -1,5 +1,10 @@
 # BidBridge backend integration
 
+> Preserved legacy backend. The current Gap-to-Go workspace runs locally without
+> FastAPI, retrieval, or model services. These routes and tests remain available
+> for historical compatibility; they are not release prerequisites for the core
+> product. Do not implement obsolete AI work to unblock the new workspace.
+
 Integration branch: `integration/bidbridge`. Christan's recovered backend source
 is `e3214c10fbd5c6762eac2b3a1accfa45fe1aee10`; the preserved AI baseline is
 `d44e3e72f03e59b927a674abe76701d75abdbbb9`. The integration branch did not exist
