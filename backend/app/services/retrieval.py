@@ -10,8 +10,10 @@ from collections import Counter
 import hashlib
 import math
 import re
+from typing import Any
 
-from app.services.document_parser import extract_pdf_text_from_bytes
+from ..schemas.assessment import RetrievedEvidence, SupplierProfile
+from .document_parser import extract_pdf_text_from_bytes
 
 
 _TOKEN_PATTERN = re.compile(r"\w+", flags=re.UNICODE)
@@ -209,6 +211,19 @@ def retrieve_tender_evidence(pdf_bytes, filename, top_k_per_query=5):
             })
 
     return evidence
+
+
+class TenderRetrievalService:
+    """Adapter implementing the backend's synchronous retrieval protocol."""
+
+    def retrieve(
+        self,
+        pdf_bytes: bytes,
+        filename: str,
+        supplier_profile: SupplierProfile,
+    ) -> list[RetrievedEvidence | dict[str, Any]]:
+        """Return canonical evidence; tender queries do not depend on the profile."""
+        return retrieve_tender_evidence(pdf_bytes, filename)
 
 
 def _tokenize(text):

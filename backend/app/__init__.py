@@ -1,0 +1,1 @@
+"""BidBridge backend application."""

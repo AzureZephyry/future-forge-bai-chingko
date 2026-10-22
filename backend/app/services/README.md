@@ -17,8 +17,7 @@ settings.
 `retrieval.retrieve_relevant_passages(query, chunks, top_k=5)` ranks the chunks
 with BM25 and returns matching passages in descending score order. Each result
 contains `chunk_id`, `document`, `page`, `text`, and `score`. Blank queries,
-nonmatching queries, or empty input produce an empty list. This is an internal
-service interface; it does not represent an agreed FastAPI contract.
+nonmatching queries, or empty input produce an empty list.
 
 `retrieval.retrieve_tender_evidence(pdf_bytes, filename,
 top_k_per_query=5)` is the backend-facing service entry point. It parses the
@@ -50,8 +49,17 @@ times `top_k_per_query`; fewer results may be returned when categories have
 fewer matches or share passages. Chunk IDs are deterministic and collision
 duplicates within a chunk set receive a stable numeric suffix.
 
-Run the focused suite from `backend/` with:
+`TenderRetrievalService.retrieve(pdf_bytes, filename, supplier_profile)`
+implements `backend.app.services.interfaces.RetrievalService`. It accepts the
+backend's `SupplierProfile` for protocol compatibility; current tender-only
+queries do not use supplier profile values. It returns the same four-field
+evidence dictionaries expected by `RetrievedEvidence`, with no BM25 score.
+Pass this adapter as `retrieval_service` to `create_app()` to wire it into the
+FastAPI flow. The default app and factory remain unconfigured unless a service
+is explicitly supplied, preserving the backend's fail-closed behavior.
+
+Run the retrieval, backend, and AI assessment tests from the repository root:
 
 ```powershell
-python -m unittest discover -s tests -v
+python -m pytest backend/tests backend/ai_assessment/tests -q
 ```

@@ -3,10 +3,10 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import fitz
+import pymupdf as fitz
 
-from app.services.document_parser import extract_pdf_text, extract_pdf_text_from_bytes
-from app.services.retrieval import (
+from backend.app.services.document_parser import extract_pdf_text, extract_pdf_text_from_bytes
+from backend.app.services.retrieval import (
     REQUIREMENT_QUERIES,
     chunk_pages,
     retrieve_relevant_passages,
@@ -206,9 +206,9 @@ class TenderEvidenceTests(unittest.TestCase):
             "text": "Source evidence.",
         }]
         return (
-            patch("app.services.retrieval.extract_pdf_text_from_bytes", return_value=pages),
-            patch("app.services.retrieval.chunk_pages", return_value=chunks),
-            patch("app.services.retrieval.retrieve_relevant_passages", side_effect=results),
+            patch("backend.app.services.retrieval.extract_pdf_text_from_bytes", return_value=pages),
+            patch("backend.app.services.retrieval.chunk_pages", return_value=chunks),
+            patch("backend.app.services.retrieval.retrieve_relevant_passages", side_effect=results),
         )
 
     def test_runs_all_six_categories_and_deduplicates_normalized_evidence(self):
