@@ -1,2 +1,8 @@
-# future-forge-bai-chingko
-Team Bai-chingko's FUTURE FORGE Hackathon project
+# Team Bai-chingko
+
+FUTURE FORGE — The ALMA Hackathon
+
+Frontend: React + Vite + TypeScript
+Backend: Python + FastAPI
+
+Challenge: Document-based RAG
