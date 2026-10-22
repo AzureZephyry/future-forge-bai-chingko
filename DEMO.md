@@ -1,5 +1,48 @@
 # BidBridge judge demo and presentation copy
 
+## Current commercial checkpoint: quick demo
+
+Run `npm ci`, then `npm run dev`; open **http://127.0.0.1:5173**.
+The homepage, Features and Pricing pages lead into the multipage workspace.
+Free includes three accepted uploads per local day. Pro Weekly is an
+illustrative ₱99 per 168-hour period, activated locally with no payment.
+
+1. Open `/pricing` and explain the two plans and demo-only activation.
+2. Open `/app/opportunity`; select **Load fictional demo**.
+3. Prepare four small `.txt` files in a temporary folder, each containing
+   `Fictional supporting evidence — user review required.` For example:
+
+   ```powershell
+   $bidbridgeDemoFolder = Join-Path $env:TEMP 'bidbridge-demo-files'
+   New-Item -ItemType Directory -Force -Path $bidbridgeDemoFolder
+   1..4 | ForEach-Object {
+     Set-Content -LiteralPath (Join-Path $bidbridgeDemoFolder "evidence-$_.txt") -Value 'Fictional supporting evidence - user review required.'
+   }
+   ```
+
+4. Open **Documents** and select three files. Show allowance **3 → 0** and
+   the real evidence library. A fourth file is rejected without consuming more.
+5. Select **View Pro Weekly**, then **Preview Pro Weekly** and **Activate Demo
+   Pro**. No card, account or payment is involved. Show expiry in **Plan & usage**.
+6. Return to Documents and accept the fourth file. Pro removes the daily count
+   cap; the 10 MB per-file limit and browser storage capacity still apply.
+7. Open **Gap-to-Go**, start a scenario, and change the specification estimate
+   **7 → 3**. Risk clears, but Missing remains. Mark the specification,
+   registration and delivery Ready: **Ready for Review** appears hypothetically.
+8. Open **Decision brief** to show the hypothetical label and print controls.
+   Return to Gap-to-Go and discard to restore the baseline.
+
+Use a fresh browser profile for a fresh upload demonstration. Loading the
+fictional tender does **not** reset usage or delete files. **End demo Pro**
+returns to the day's previously consumed Free allowance. Expiry does the same
+automatically, without deleting accepted files. Do not clear real user data to
+reset a presentation. The app uses local storage only and has no billing server.
+
+Motion animations and further visual expansion were deferred to preserve the
+stable commercial workflow. The earlier standalone presentation copy below
+remains useful; its original single-page instructions are historical. Use the
+routes and steps above for the current build.
+
 **Product:** BidBridge — Know Before You Bid. A local procurement-preparation
 workspace for small suppliers, contractors and procurement assistants.
 

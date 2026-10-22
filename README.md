@@ -1,56 +1,109 @@
 # BidBridge — Know Before You Bid.
 
-FUTURE FORGE — The ALMA Hackathon
+Team Bai-chingko · FUTURE FORGE. A procurement-preparation workspace and
+commercial SaaS demonstration built with React, Vite and TypeScript.
 
-Team Bai-chingko · React + Vite + TypeScript. The original FastAPI and AI
-assessment implementation is preserved separately.
+**This is a browser-local business model prototype. No payment is processed.**
+The core requires no account, Python server, AI provider or API key.
 
-## Current release: Gap-to-Go workspace
+## Run locally
 
-The hackathon scope has changed. BidBridge is now a local procurement-readiness
-and deadline-risk workspace, with no required backend, AI keys, or RAG service.
-The older document-based assessment is preserved separately at `/legacy`.
-
-From the repository root in Windows PowerShell (Node 24 + npm):
+From the repository root in Windows PowerShell (verified with Node 24 and npm):
 
 ```powershell
 npm ci
 npm run dev
 ```
 
-Open **http://127.0.0.1:5173**. Create an opportunity or choose **Load fictional
-demo**. Enter requirements, statuses, and your preparation estimates; the
-advisory and actions update immediately. Valid changes save to this browser's
-localStorage. This is user-reported preparation guidance, not official
-eligibility or a guarantee of bid success.
+Open **http://127.0.0.1:5173**. Start Free or visit the pricing page to preview
+Pro Weekly. The fictional opportunity is available from the application header.
+
+| Route | Purpose |
+|---|---|
+| `/` | Marketing homepage and interactive fictional product preview |
+| `/features` | Preparation workflow and product explanations |
+| `/pricing` | Exactly two plans: Free and Pro Weekly; demo activation |
+| `/app` | Dashboard with real workspace metrics |
+| `/app/opportunity` | Opportunity details and requirement management |
+| `/app/documents` | Local evidence library and upload allowance |
+| `/app/simulator` | Isolated Gap-to-Go scenario and comparison |
+| `/app/report` | Printable baseline or hypothetical decision brief |
+| `/app/plan` | Demo activation, explicit restart/end, usage and expiry |
+| `/legacy` | Preserved original AI assessment frontend |
+
+## Plans and documents
+
+Free allows **3 successfully stored files per local calendar day**, across the
+whole local application. Allowance resets at local midnight, not after a rolling
+24 hours. Invalid/rejected files, picker cancellation and failed storage consume
+no allowance. Removing a stored file does not refund its slot. Batch selection
+cannot exceed the remaining allowance. Duplicate filenames are allowed and each
+accepted file counts separately.
+
+Pro Weekly uses an **illustrative ₱99 per 7-day period** price from
+`lib/subscription.ts`. Confirming demo activation starts exactly **168 hours** of
+access with no daily numerical upload cap. There is no transaction or automatic
+renewal. At expiry, Free limits return using that day's existing Free usage.
+Pro uploads do not consume Free slots. Existing files remain available. An
+explicit demo restart starts a new 168-hour period from now, without adding
+unused time.
+
+PDF, DOCX, TXT, PNG and JPG/JPEG files are supported, up to **10 MB per file** on
+both plans. Metadata, file blobs and accepted Free usage commit atomically in
+IndexedDB. Failed writes roll back together. Files can be associated with
+baseline requirements, previewed (PDF/image/text), downloaded and removed. DOCX
+is downloadable without a document renderer. Uploading never changes readiness
+status automatically or performs AI analysis.
+
+The UI refreshes at local midnight/Pro expiry, on focus, visibility and relevant
+cross-tab messages. Every acceptance rechecks the current plan/date inside its
+transaction. Concurrent tabs serialize quota changes. Browser suspension can
+delay timers; resuming re-evaluates actual time. Clearing browser data or changing
+device time can bypass this prototype. It is not production entitlement security.
+
+## Preparation, persistence and appearance
+
+The existing `assessWorkspace(workspace, today)` engine remains deterministic.
+Mandatory blockers take priority over completion percentage. All preparation
+tools remain available on both plans. A file attachment does not prove a match.
+
+Validated opportunity data remains in localStorage; files, daily usage and demo
+entitlements use IndexedDB. Scenarios are in memory and survive app navigation,
+but a full refresh restores the baseline. Apply requires confirmation. Theme is
+a separate local preference; the initial default follows the operating system.
+
+Local data belongs to one browser profile and origin. There is no cloud backup,
+cross-device sync, authentication, real billing or automatic bid submission.
+The app works locally after its resources load, but is not an installable PWA.
+
+## Verification and production preview
 
 ```powershell
 npm run typecheck
 npm run build
-npm run test:unit
-npx playwright install chromium
-npm run test:browser
+$env:PLAYWRIGHT_CHANNEL='msedge'
+npm test
 ```
 
-On Windows with Edge installed, set `$env:PLAYWRIGHT_CHANNEL='msedge'` before
-browser tests instead of downloading Chromium. Python is only needed for the
-separately maintained legacy checks (`npm run test:legacy` and the tests in
-`backend/`), not the new primary product. Run all commands at repository root.
+If Edge is unavailable, use `npx playwright install chromium` and omit the channel
+variable. `npm test` runs domain tests and the primary browser suites. Tests
+start Vite automatically on 4173 and require no Python.
 
-Local storage is one workspace on one browser/device, without cloud sync or
-binary PDF storage. Corrupt/future-version data is rejected without automatic
-replacement; unavailable storage is reported honestly. The core works with
-network access disabled after resources load, but is not an installable PWA.
+```powershell
+npm run preview -- --host 127.0.0.1 --port 4174 --strictPort
+```
 
-**Start what-if scenario** creates an in-memory copy. Compare the baseline and
-hypothetical outcome, then discard or explicitly confirm applying the changes.
-Refreshing drops the scenario and restores the baseline. **View decision brief**
-shows the active workspace with its context and disclaimer; **Print decision
-brief** opens the browser print dialog (including its Save as PDF option).
+Preview: **http://127.0.0.1:4174**. Deploy `dist/` with an SPA history fallback to
+`index.html` for direct nested URLs. Root hosting is the tested configuration.
 
-Read [RELEASE.md](RELEASE.md) for rules, verification, deployment limits and safe
-team synchronization. [DEMO.md](DEMO.md) contains the exact judge demo and
-presentation-ready business narrative.
+Preserved legacy checks require the Python environment from
+[backend/README.md](backend/README.md):
 
-Historical integration guides: [frontend](FRONTEND.md) and
-[backend](backend/README.md). These describe the preserved `/legacy` workflow.
+```powershell
+npm run test:legacy
+.\.venv\Scripts\python.exe -B -m pytest -p no:cacheprovider backend/tests backend/ai_assessment/tests -q
+```
+
+Run primary and legacy browser suites separately; both use port 4173. The legacy
+backend, schemas, AI module and retrieval branch are preserved. They are not
+dependencies of the commercial workspace.

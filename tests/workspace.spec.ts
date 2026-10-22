@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("request", (request) => { if (/\/api\//.test(request.url())) serviceRequests.push(request.url()); });
   await page.clock.install({ time: new Date("2026-10-22T02:00:00Z") });
-  await page.goto("/");
+  await page.goto("/app/opportunity");
 });
 test.afterEach(() => { expect(errors).toEqual([]); expect(serviceRequests).toEqual([]); });
 
@@ -22,7 +22,7 @@ function requirement(page: Page, name: string) { return page.getByRole("article"
 function advisory(page: Page) { return page.getByLabel("Preparation advisory"); }
 
 test("initial product renders without a backend or AI error screen", async ({ page }) => {
-  await expect(page.getByRole("heading", { name: /Know your gaps.*Find your next move/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Opportunity & requirements" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Create workspace" })).toBeVisible();
   await expect(page.getByText("No account or AI service required", { exact: false })).toBeVisible();
   await expect(page.getByText("ALMA inference is unavailable.")).toHaveCount(0);
@@ -196,6 +196,7 @@ test("what-if edits compare risks without saving, and discard restores the basel
   await demo(page);
   const baseline = await stored(page);
   await page.getByRole("button", { name: "Start what-if scenario" }).click();
+  await expect(page.getByRole("region", { name: "What-if comparison" })).toBeVisible();
   await requirement(page, "Signed product specification sheet").getByLabel("Estimated preparation days").fill("3");
   const comparison = page.getByRole("region", { name: "What-if comparison" });
   await expect(comparison).toContainText("Critical Blocker");
@@ -207,6 +208,7 @@ test("what-if edits compare risks without saving, and discard restores the basel
   expect(await stored(page)).toBe(baseline);
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Discard scenario" }).click();
+  await page.getByRole("navigation", { name: "Application navigation" }).getByRole("link", { name: "Opportunity", exact: true }).click();
   await expect(comparison).toHaveCount(0);
   await expect(requirement(page, "Signed product specification sheet").getByLabel("Estimated preparation days")).toHaveValue("7");
   expect(await stored(page)).toBe(baseline);
@@ -216,9 +218,11 @@ test("refreshing a scenario restores the saved baseline, never hypothetical chan
   await demo(page);
   const baseline = await stored(page);
   await page.getByRole("button", { name: "Start what-if scenario" }).click();
+  await expect(page.getByRole("region", { name: "What-if comparison" })).toBeVisible();
   await requirement(page, "Signed product specification sheet").getByLabel("Estimated preparation days").fill("3");
   page.once("dialog", (dialog) => dialog.accept());
   await page.reload();
+  await page.getByRole("navigation", { name: "Application navigation" }).getByRole("link", { name: "Opportunity", exact: true }).click();
   await expect(page.getByRole("region", { name: "What-if comparison" })).toHaveCount(0);
   await expect(requirement(page, "Signed product specification sheet").getByLabel("Estimated preparation days")).toHaveValue("7");
   expect(await stored(page)).toBe(baseline);
@@ -228,6 +232,7 @@ test("scenario opportunity edits, requirement addition and removal remain isolat
   await demo(page);
   const baseline = await stored(page);
   await page.getByRole("button", { name: "Start what-if scenario" }).click();
+  await expect(page.getByRole("region", { name: "What-if comparison" })).toBeVisible();
   await page.getByText("Edit opportunity details", { exact: true }).click();
   await page.getByLabel("Opportunity title", { exact: true }).fill("Hypothetical opportunity");
   await page.getByLabel("Submission deadline", { exact: true }).fill("2026-10-30");
@@ -239,6 +244,7 @@ test("scenario opportunity edits, requirement addition and removal remain isolat
   expect(await stored(page)).toBe(baseline);
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Discard scenario" }).click();
+  await page.getByRole("navigation", { name: "Application navigation" }).getByRole("link", { name: "Opportunity", exact: true }).click();
   await expect(requirement(page, "Business permit")).toBeVisible();
   await expect(requirement(page, "Scenario-only item")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Office Supplies Procurement — Demonstration", exact: true })).toBeVisible();
@@ -248,6 +254,7 @@ test("scenario application requires explicit confirmation and then survives relo
   await demo(page);
   const baseline = await stored(page);
   await page.getByRole("button", { name: "Start what-if scenario" }).click();
+  await expect(page.getByRole("region", { name: "What-if comparison" })).toBeVisible();
   await requirement(page, "Signed product specification sheet").getByLabel("Estimated preparation days").fill("3");
   page.once("dialog", (dialog) => dialog.dismiss());
   await page.getByRole("button", { name: "Apply scenario to workspace" }).click();
@@ -258,6 +265,7 @@ test("scenario application requires explicit confirmation and then survives relo
   await expect(page.getByText("Saved locally in this browser", { exact: true })).toBeVisible();
   expect(await stored(page)).not.toBe(baseline);
   await page.reload();
+  await page.getByRole("navigation", { name: "Application navigation" }).getByRole("link", { name: "Opportunity", exact: true }).click();
   await expect(advisory(page)).toContainText("Action Required");
   await expect(requirement(page, "Signed product specification sheet").getByLabel("Estimated preparation days")).toHaveValue("3");
 });
@@ -266,17 +274,20 @@ test("invalid scenarios cannot be applied and do not show a misleading compariso
   await demo(page);
   const baseline = await stored(page);
   await page.getByRole("button", { name: "Start what-if scenario" }).click();
+  await expect(page.getByRole("region", { name: "What-if comparison" })).toBeVisible();
   await requirement(page, "Signed product specification sheet").getByLabel("Estimated preparation days").fill("-1");
   await expect(page.getByRole("button", { name: "Apply scenario to workspace" })).toBeDisabled();
   await expect(page.getByRole("region", { name: "What-if comparison" })).toContainText("Correct invalid scenario fields");
   await expect(page.getByRole("region", { name: "What-if comparison" })).not.toContainText("Deadline risks:");
-  await expect(page.getByRole("button", { name: "View decision brief" })).toBeDisabled();
+  await page.getByRole("link", { name: "View decision brief", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("Correct invalid workspace fields");
   expect(await stored(page)).toBe(baseline);
 });
 
 test("comparison explains newly introduced mandatory and optional risks", async ({ page }) => {
   await demo(page);
   await page.getByRole("button", { name: "Start what-if scenario" }).click();
+  await expect(page.getByRole("region", { name: "What-if comparison" })).toBeVisible();
   await requirement(page, "Supplier registration").getByLabel("Preparation status").selectOption("conflict");
   await requirement(page, "Additional supporting record").getByLabel("Estimated preparation days").fill("8");
   const introduced = page.getByRole("region", { name: "What-if comparison" }).locator(".comparison-grid > div").filter({ has: page.getByRole("heading", { name: "Risks introduced under these assumptions" }) });
@@ -289,6 +300,7 @@ test("complete rescue scenario stays hypothetical in its live decision brief", a
   await demo(page);
   const baseline = await stored(page);
   await page.getByRole("button", { name: "Start what-if scenario" }).click();
+  await expect(page.getByRole("region", { name: "What-if comparison" })).toBeVisible();
   await requirement(page, "Signed product specification sheet").getByLabel("Estimated preparation days").fill("3");
   for (const title of ["Signed product specification sheet", "Supplier registration", "Delivery commitment"]) {
     await requirement(page, title).getByLabel("Preparation status").selectOption("ready");
@@ -298,7 +310,7 @@ test("complete rescue scenario stays hypothetical in its live decision brief", a
   await expect(comparison).toContainText("Critical Blocker");
   await expect(comparison).toContainText("Ready for Review");
   await expect(comparison).toContainText("Unresolved items: 4 → 1");
-  await page.getByRole("button", { name: "View decision brief" }).click();
+  await page.getByRole("link", { name: "View decision brief", exact: true }).click();
   const brief = page.getByRole("region", { name: "Bid decision brief" });
   await expect(brief).toContainText("HYPOTHETICAL SCENARIO");
   await expect(brief).toContainText("Ready for Review");
@@ -310,7 +322,7 @@ test("complete rescue scenario stays hypothetical in its live decision brief", a
 
 test("baseline decision brief reflects actual fields and prints only the readable brief", async ({ page }) => {
   await demo(page);
-  await page.getByRole("button", { name: "View decision brief" }).click();
+  await page.getByRole("link", { name: "View decision brief", exact: true }).click();
   const brief = page.getByRole("region", { name: "Bid decision brief" });
   await expect(brief).toContainText("CURRENT WORKSPACE");
   await expect(brief).toContainText("Critical Blocker");
@@ -335,9 +347,10 @@ test("mobile what-if comparison and brief remain usable without horizontal overf
   await page.setViewportSize({ width: 390, height: 844 });
   await demo(page);
   await page.getByRole("button", { name: "Start what-if scenario" }).click();
+  await expect(page.getByRole("region", { name: "What-if comparison" })).toBeVisible();
   await requirement(page, "Signed product specification sheet").getByLabel("Estimated preparation days").fill("3");
   await expect(page.getByRole("region", { name: "What-if comparison" })).toContainText("Action Required");
-  await page.getByRole("button", { name: "View decision brief" }).click();
+  await page.getByRole("link", { name: "View decision brief", exact: true }).click();
   await expect(page.getByRole("region", { name: "Bid decision brief" })).toContainText("HYPOTHETICAL SCENARIO");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: "test-results/scenario-mobile.png", fullPage: true });

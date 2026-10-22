@@ -1,8 +1,9 @@
 import { ADVISORY_LABELS, DISCLAIMER, ESTIMATE_NOTE } from "../lib/readiness.ts";
 import type { ReadinessAssessment } from "../lib/readiness.ts";
 import { STATUS_COPY, STATUSES } from "../lib/workspace.ts";
+import { Link } from "react-router";
 
-export function ReadinessDashboard({ assessment }: { assessment: ReadinessAssessment }) {
+export function ReadinessDashboard({ assessment, actionPath = "" }: { assessment: ReadinessAssessment; actionPath?: string }) {
   const a = assessment;
   return <>
     <section className={"advisory advisory-" + a.outcome} aria-label="Preparation advisory" aria-live="polite">
@@ -31,7 +32,7 @@ export function ReadinessDashboard({ assessment }: { assessment: ReadinessAssess
       <p className="hint">{ESTIMATE_NOTE}</p>
       {a.actions.length === 0 ? <p>{a.outcome === "ready_for_review" ? "No unresolved recorded preparation items. Review supporting records and tender completeness." : "Add or correct requirements to produce preparation actions."}</p>
         : <ol className="action-list">{a.actions.map((item) => <li className="action-item" key={item.id}>
-          <div className="action-heading"><a href={"#requirement-" + encodeURIComponent(item.id)}>{item.title}</a><span className="hint">Priority group {item.priority} · {item.mandatory ? "Mandatory" : "Optional"} · {STATUS_COPY[item.status].label}</span></div>
+          <div className="action-heading"><Link to={actionPath + "#requirement-" + encodeURIComponent(item.id)}>{item.title}</Link><span className="hint">Priority group {item.priority} · {item.mandatory ? "Mandatory" : "Optional"} · {STATUS_COPY[item.status].label}</span></div>
           <p>{item.recommendation}</p><p className="hint">{item.reason}</p><p className={"feasibility feasibility-" + item.feasibility.state}>{item.feasibility.text}</p>
         </li>)}</ol>}
       <p className="advisory-disclaimer">{DISCLAIMER}</p>

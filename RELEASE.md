@@ -1,5 +1,53 @@
 # Gap-to-Go release and engineering handoff
 
+## Commercial recovery checkpoint
+
+This release builds from `e9522bea72adc343e285ca1649c63c4f2561c42d` on
+`integration/bidbridge`. It adds real multipage navigation, browser-local
+documents, atomic Free upload accounting, local-midnight resets, simulated
+168-hour Pro access, pricing/plan management and warm light/dark themes.
+Workspace and scenario state are shared above routes. The readiness engine and
+legacy backend production code are preserved.
+
+Document blobs, metadata, subscription and date-keyed Free usage use IndexedDB.
+Acceptance serializes a read/write transaction; metadata, blob and quota commit
+together or roll back together. Notifications use local events, BroadcastChannel
+and a storage-event fallback. Failed notifications do not undo accepted files.
+Uploads always recheck actual date and entitlement. Plan refresh is scheduled
+at midnight/expiry and repeated on focus/visibility changes.
+
+Motion enhancements and further design expansion were deferred during capacity
+recovery. The unused Motion dependency was removed. React Router is the only
+new runtime library. No payment, authentication or cloud services were added.
+See [README.md](README.md) for current routes/commands and [DEMO.md](DEMO.md)
+for the commercial judge flow and sample-file preparation.
+
+Recovery verification: `npm ci`, TypeScript and Vite production build passed;
+104 unit tests and 64 combined browser tests passed. The latter retain all
+27 original workspace cases and add 37 commercial cases, including midnight,
+DST, exact expiry, failed-write rollback, batch limits and concurrent tabs.
+The separately preserved legacy browser suite also passed all 19 tests.
+The preserved Python suites passed 72 tests plus 58 subtests, with one existing
+Starlette/httpx deprecation warning. A smoke test of the built bundle passed
+Free three/four enforcement, Pro activation, stored files, scenario/report and
+offline navigation, without API calls or page errors. Light/dark responsive
+screenshots were inspected. Physical devices, printers and public deployment
+were not tested. Earlier PDF preview startup and route-transition test failures
+were corrected and rerun; no tests were disabled.
+
+Validation covers formats/extensions/MIME and basic headers, not malware or
+document-content verification. PDF/image/text previews are local; DOCX is
+downloadable. Storage can be cleared, device time changed and entitlements
+tampered with: this is explicitly a frontend commercial demonstration.
+
+The earlier engineering handoff below is retained as historical context.
+
+> Historical standalone release at `e9522be`. The commercial multipage release
+> now builds on this foundation; current routes, subscriptions and document
+> storage are described in [README.md](README.md). The readiness rules below
+> remain unchanged. File storage and single-page UI descriptions below are
+> historical, not the current product contract.
+
 Authoritative branch: `integration/bidbridge`. Starting integrated AI baseline:
 `f9e0dfca9fa7a5384f478d4490973eb31dc5ce4f`. The verified non-AI P0 was committed
 and pushed first as `6413cf1664e091af5e2f01bce12f5448bc475484`, before scenario and

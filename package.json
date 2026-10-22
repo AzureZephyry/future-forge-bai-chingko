@@ -17,6 +17,7 @@
     "@vitejs/plugin-react": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "react-router": "8.5.0",
     "typescript": "latest",
     "vite": "latest"
   },

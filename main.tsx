@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import "./workspace.css";
+import "./commercial.css";
 
 const root = createRoot(document.getElementById("root")!);
 if (window.location.pathname === "/legacy") {
