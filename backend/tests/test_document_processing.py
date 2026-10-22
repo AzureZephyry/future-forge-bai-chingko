@@ -1,11 +1,17 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import fitz
 
-from app.services.document_parser import extract_pdf_text
-from app.services.retrieval import chunk_pages, retrieve_relevant_passages
+from app.services.document_parser import extract_pdf_text, extract_pdf_text_from_bytes
+from app.services.retrieval import (
+    REQUIREMENT_QUERIES,
+    chunk_pages,
+    retrieve_relevant_passages,
+    retrieve_tender_evidence,
+)
 
 
 class ChunkPagesTests(unittest.TestCase):
@@ -37,6 +43,17 @@ class ChunkPagesTests(unittest.TestCase):
             with self.subTest(chunk_size=chunk_size, overlap=overlap):
                 with self.assertRaises(ValueError):
                     chunk_pages([], chunk_size=chunk_size, overlap=overlap)
+
+    def test_chunk_ids_are_unique_for_repeated_page_records(self):
+        duplicate_pages = [
+            {"document": "source.pdf", "page": 1, "text": "same source passage"},
+            {"document": "source.pdf", "page": 1, "text": "same source passage"},
+        ]
+
+        chunks = chunk_pages(duplicate_pages, chunk_size=20, overlap=0)
+
+        self.assertEqual(len(chunks), 2)
+        self.assertEqual(len({chunk["chunk_id"] for chunk in chunks}), 2)
 
 
 class RetrievalTests(unittest.TestCase):
@@ -119,6 +136,146 @@ class PdfParserTests(unittest.TestCase):
         self.assertEqual(pages[0]["document"], "actual-source.pdf")
         self.assertEqual(pages[0]["page"], 1)
         self.assertEqual(pages[0]["text"], "Source passage for retrieval.")
+
+    def test_path_interface_still_accepts_path_objects(self):
+        pdf_path = self.directory / "path-interface.pdf"
+        with fitz.open() as pdf:
+            page = pdf.new_page()
+            page.insert_text((72, 72), "Path parser source.")
+            pdf.save(pdf_path)
+
+        self.assertEqual(extract_pdf_text(pdf_path)[0]["document"], "path-interface.pdf")
+
+    def test_byte_parser_preserves_filename_and_original_page_numbers(self):
+        pdf_path = self.directory / "uploaded.pdf"
+        with fitz.open() as pdf:
+            first = pdf.new_page()
+            first.insert_text((72, 72), "First source passage.")
+            pdf.new_page()
+            third = pdf.new_page()
+            third.insert_text((72, 72), "Third source passage.")
+            pdf.save(pdf_path)
+
+        pages = extract_pdf_text_from_bytes(pdf_path.read_bytes(), "caller-name.pdf")
+
+        self.assertEqual([page["document"] for page in pages], ["caller-name.pdf"] * 2)
+        self.assertEqual([page["page"] for page in pages], [1, 3])
+        self.assertEqual([page["text"] for page in pages], [
+            "First source passage.", "Third source passage."
+        ])
+
+    def test_byte_parser_rejects_empty_malformed_encrypted_and_textless_pdfs(self):
+        with self.assertRaisesRegex(ValueError, "empty"):
+            extract_pdf_text_from_bytes(b"", "empty.pdf")
+        with self.assertRaisesRegex(ValueError, "invalid or damaged"):
+            extract_pdf_text_from_bytes(b"not a PDF", "broken.pdf")
+
+        blank_path = self.directory / "blank-bytes.pdf"
+        with fitz.open() as pdf:
+            pdf.new_page()
+            pdf.save(blank_path)
+        with self.assertRaisesRegex(ValueError, "No extractable text"):
+            extract_pdf_text_from_bytes(blank_path.read_bytes(), "blank-bytes.pdf")
+
+        encrypted_path = self.directory / "encrypted.pdf"
+        with fitz.open() as pdf:
+            page = pdf.new_page()
+            page.insert_text((72, 72), "Encrypted source passage.")
+            pdf.save(
+                encrypted_path,
+                encryption=fitz.PDF_ENCRYPT_AES_256,
+                owner_pw="owner-password",
+                user_pw="user-password",
+            )
+        with self.assertRaisesRegex(ValueError, "Encrypted"):
+            extract_pdf_text_from_bytes(encrypted_path.read_bytes(), "encrypted.pdf")
+
+
+class TenderEvidenceTests(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory(dir=Path.cwd())
+        self.addCleanup(self.temp_dir.cleanup)
+        self.directory = Path(self.temp_dir.name)
+
+    def _prepared_retrieval(self, results):
+        pages = [{"document": "tender.pdf", "page": 1, "text": "Source evidence."}]
+        chunks = [{
+            "chunk_id": "stable-id",
+            "document": "tender.pdf",
+            "page": 1,
+            "text": "Source evidence.",
+        }]
+        return (
+            patch("app.services.retrieval.extract_pdf_text_from_bytes", return_value=pages),
+            patch("app.services.retrieval.chunk_pages", return_value=chunks),
+            patch("app.services.retrieval.retrieve_relevant_passages", side_effect=results),
+        )
+
+    def test_runs_all_six_categories_and_deduplicates_normalized_evidence(self):
+        result = {
+            "chunk_id": "stable-id",
+            "document": "tender.pdf",
+            "page": 1,
+            "text": "Source evidence.",
+            "score": 0.75,
+        }
+        parser_patch, chunk_patch, retrieve_patch = self._prepared_retrieval(
+            [[result]] * len(REQUIREMENT_QUERIES)
+        )
+        with parser_patch as parse_pdf, chunk_patch as make_chunks, retrieve_patch as retrieve:
+            evidence = retrieve_tender_evidence(b"pdf bytes", "tender.pdf", top_k_per_query=2)
+
+        parse_pdf.assert_called_once_with(b"pdf bytes", "tender.pdf")
+        make_chunks.assert_called_once_with(parse_pdf.return_value)
+        self.assertEqual(retrieve.call_count, 6)
+        self.assertEqual([call.args[0] for call in retrieve.call_args_list], [
+            query for _, query in REQUIREMENT_QUERIES
+        ])
+        self.assertTrue(all(call.kwargs["top_k"] == 2 for call in retrieve.call_args_list))
+        self.assertEqual(evidence, [{
+            "chunk_id": "stable-id",
+            "document": "tender.pdf",
+            "page": 1,
+            "text": "Source evidence.",
+        }])
+        self.assertEqual(set(evidence[0]), {"chunk_id", "document", "page", "text"})
+        self.assertIsInstance(evidence[0]["page"], int)
+        self.assertGreater(evidence[0]["page"], 0)
+
+    def test_top_k_is_passed_to_each_query_and_no_matches_return_empty(self):
+        parser_patch, chunk_patch, retrieve_patch = self._prepared_retrieval([[]] * 6)
+        with parser_patch, chunk_patch, retrieve_patch as retrieve:
+            evidence = retrieve_tender_evidence(b"pdf bytes", "tender.pdf", top_k_per_query=1)
+
+        self.assertEqual(evidence, [])
+        self.assertTrue(all(call.kwargs["top_k"] == 1 for call in retrieve.call_args_list))
+
+    def test_actual_tender_evidence_is_returned_without_bm25_score(self):
+        source_text = (
+            "Bidders must submit an audited financial statement before the closing date."
+        )
+        pdf_path = self.directory / "actual-tender.pdf"
+        with fitz.open() as pdf:
+            page = pdf.new_page()
+            page.insert_text((72, 72), source_text)
+            pdf.save(pdf_path)
+
+        evidence = retrieve_tender_evidence(pdf_path.read_bytes(), "actual-tender.pdf")
+
+        self.assertTrue(evidence)
+        self.assertTrue(all(item["text"] == source_text for item in evidence))
+        self.assertTrue(all(item["document"] == "actual-tender.pdf" for item in evidence))
+        self.assertTrue(all(item["page"] == 1 for item in evidence))
+        self.assertTrue(all(set(item) == {"chunk_id", "document", "page", "text"} for item in evidence))
+        self.assertEqual(len({item["chunk_id"] for item in evidence}), len(evidence))
+
+    def test_validates_top_k_and_filename(self):
+        with self.assertRaises(ValueError):
+            retrieve_tender_evidence(b"pdf bytes", "tender.pdf", top_k_per_query=0)
+        with self.assertRaises(ValueError):
+            retrieve_tender_evidence(b"pdf bytes", "tender.txt")
+        with self.assertRaises(TypeError):
+            retrieve_tender_evidence("not bytes", "tender.pdf")
 
 
 if __name__ == "__main__":

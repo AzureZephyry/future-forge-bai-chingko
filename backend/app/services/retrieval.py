@@ -11,8 +11,36 @@ import hashlib
 import math
 import re
 
+from app.services.document_parser import extract_pdf_text_from_bytes
+
 
 _TOKEN_PATTERN = re.compile(r"\w+", flags=re.UNICODE)
+REQUIREMENT_QUERIES = (
+    (
+        "eligibility",
+        "bidder eligibility qualifications legal registration licenses permits mandatory conditions",
+    ),
+    (
+        "required_documents",
+        "required documents documentary requirements forms certificates affidavits declarations checklists",
+    ),
+    (
+        "financial_qualifications",
+        "financial qualifications minimum turnover revenue financial capacity credit lines audited financial statements",
+    ),
+    (
+        "technical_qualifications",
+        "technical qualifications relevant experience similar contracts personnel equipment technical capability certifications",
+    ),
+    (
+        "delivery_conditions",
+        "delivery conditions timelines locations schedules warranties installation inspection acceptance",
+    ),
+    (
+        "submission_instructions",
+        "submission instructions deadlines closing dates methods required formats copies envelopes bid opening",
+    ),
+)
 
 
 def chunk_pages(pages, chunk_size=180, overlap=30):
@@ -30,6 +58,7 @@ def chunk_pages(pages, chunk_size=180, overlap=30):
         raise ValueError("overlap must be smaller than chunk_size.")
 
     chunks = []
+    used_chunk_ids = set()
     for page_record in pages:
         try:
             document = page_record["document"]
@@ -51,7 +80,13 @@ def chunk_pages(pages, chunk_size=180, overlap=30):
             end = min(start + chunk_size, len(words))
             excerpt = text[words[start].start():words[end - 1].end()]
             identity = f"{document}\0{page}\0{start}\0{excerpt}".encode("utf-8")
-            chunk_id = hashlib.sha256(identity).hexdigest()[:16]
+            base_chunk_id = hashlib.sha256(identity).hexdigest()[:16]
+            chunk_id = base_chunk_id
+            duplicate_number = 1
+            while chunk_id in used_chunk_ids:
+                duplicate_number += 1
+                chunk_id = f"{base_chunk_id}-{duplicate_number}"
+            used_chunk_ids.add(chunk_id)
             chunks.append({
                 "chunk_id": chunk_id,
                 "document": document,
@@ -137,6 +172,43 @@ def retrieve_relevant_passages(query, chunks, top_k=5):
 
     ranked.sort(key=lambda item: (-item[0], item[1]))
     return [result for _, _, result in ranked[:top_k]]
+
+
+def retrieve_tender_evidence(pdf_bytes, filename, top_k_per_query=5):
+    """Extract and retrieve tender evidence for six fixed requirement areas.
+
+    Queries run in the order listed by ``REQUIREMENT_QUERIES``. Results retain
+    each query's BM25 order; duplicate chunk IDs are omitted after their first
+    occurrence. The maximum is six times ``top_k_per_query`` before
+    deduplication and can be lower if queries return fewer distinct chunks.
+    Only source text and canonical chunk metadata are returned, with exactly
+    ``chunk_id``, ``document``, ``page``, and ``text`` keys.
+    """
+    if isinstance(top_k_per_query, bool) or not isinstance(top_k_per_query, int):
+        raise ValueError("top_k_per_query must be a positive integer.")
+    if top_k_per_query <= 0:
+        raise ValueError("top_k_per_query must be a positive integer.")
+
+    pages = extract_pdf_text_from_bytes(pdf_bytes, filename)
+    chunks = chunk_pages(pages)
+    seen_chunk_ids = set()
+    evidence = []
+
+    for _, query in REQUIREMENT_QUERIES:
+        results = retrieve_relevant_passages(query, chunks, top_k=top_k_per_query)
+        for result in results:
+            chunk_id = result["chunk_id"]
+            if chunk_id in seen_chunk_ids:
+                continue
+            seen_chunk_ids.add(chunk_id)
+            evidence.append({
+                "chunk_id": chunk_id,
+                "document": result["document"],
+                "page": result["page"],
+                "text": result["text"],
+            })
+
+    return evidence
 
 
 def _tokenize(text):
