@@ -1,5 +1,19 @@
 # Gap-to-Go release and engineering handoff
 
+## Official main-branch submission
+
+The official submission branch is `main`. The complete commercial application
+from `0f2737a1c51dede501c8c884410410c651e60e9e`, together with the finalized root
+README, is the release being promoted. `integration/bidbridge` remains the
+development and historical integration branch. The root [README.md](README.md)
+is the current product, installation, testing, and limitations guide; the
+checkpoint narratives below retain their original branch and verification context.
+
+Promotion uses a normal fast-forward when ancestry permits, preserves existing
+history, and requires successful application verification before publication.
+The independently executed final checks and published hashes are reported in
+the release handoff; earlier test counts below remain explicitly historical.
+
 ## Commercial recovery checkpoint
 
 This release builds from `e9522bea72adc343e285ca1649c63c4f2561c42d` on
